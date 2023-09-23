@@ -3,6 +3,7 @@ use tract_onnx::prelude::*;
 fn main() -> TractResult<()> {
     let model = tract_onnx::onnx()
         // load the model
+        // esempio squeeze
         .model_for_path("src/squeezenet.onnx")?
         // specify input type and shape
         .with_input_fact(0, InferenceFact::dt_shape(f32::datum_type(), tvec!(1, 3, 224, 224)))?;
