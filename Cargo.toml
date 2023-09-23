@@ -11,6 +11,12 @@ ndarray = "0.15.6"
 ndarray-image = "0.3.0"
 protobuf = "3.2.0"
 protoc = "2.28.0"
-tract-onnx = "0.17"
+tract-onnx = "0.20.7"
+prost = "0.11.8"
+prost-types = "0.11.8"
+onnx = "0.1.0"
+
+
+
 
 
