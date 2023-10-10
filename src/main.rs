@@ -1,11 +1,15 @@
+#[allow(unused_variables)]
+#[allow(unused_imports)]
 mod onnx {
     include!("onnx.rs");
 }
-
+use core::fmt;
+use std::any::type_name;
+use std::error::Error;
 use std::io::ErrorKind;
-use ndarray::{arr2, Array, Array2, Array4, ArrayD, ArrayView};
-use onnx::tensor_shape_proto::Dimension;
-use protoc::Error;
+use std::ops::Index;
+use ndarray::{arr2, Array, Array2, Array4, ArrayD, ArrayView,Dimension, IxDyn, s,Axis, Zip};
+use onnx::tensor_proto::DataLocation;
 use tract_onnx::pb::AttributeProto;
 use tract_onnx::prelude::tract_itertools::Itertools;
 use onnx::ModelProto;
@@ -13,17 +17,22 @@ use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use rand::prelude::*;
 
+
 fn main() {
     // Load and parse your ProtoBuf file (e.g., "squeezenet.onnx")
     let data = std::fs::read("src/squeezenet.onnx").expect("Failed to read ProtoBuf file");
     let parsed_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
     // Use the parsed ProtoBuf data as needed
-    let i = parsed_proto.graph.unwrap().initializer.get(10).unwrap().clone();
+    let i = parsed_proto.graph.unwrap().initializer.clone();
     let j = i.clone();
-    let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
-    println!("{:?}", op_add(vec![i, j], vec![]));
-
+    let e =i.get(0).unwrap();
+    let es: ArrayD<f32>=into(e.clone()).unwrap();
+    
+    println!("{:?}", type_of(es.clone()));
+    
+    //let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
+    //println!("{:?}", op_add(vec![i, j], vec![]));
 
 }
 
@@ -33,6 +42,60 @@ struct Operation{
     op_attributes: Vec<AttributeProto>
 }
 
+fn from<T>(array: ArrayD<T>, name : String) -> Result<TensorProto, OnnxError>
+where
+    T: Into<f32> + Into<f64> + Into<i32> + Into<i64>,
+{
+    let mut tensor = TensorProto {
+        dims: array.shape().iter().map(|&x| x as i64).collect(),
+        data_type: DataType::Undefined.into(),
+        segment: None,
+        name: name,
+        doc_string: "".to_string(),
+        data_location: DataLocation::Default.into(),
+        float_data: Vec::new(),
+        int32_data: Vec::new(),
+        string_data: Vec::new(),
+        int64_data: Vec::new(),
+        raw_data: Vec::new(),
+        external_data: Vec::new(),
+        double_data: Vec::new(),
+        uint64_data: Vec::new(),
+    };
+    match type_name::<T>() {
+        "f32" => {
+            tensor.data_type = DataType::Float.into();
+            tensor.float_data = array.into_raw_vec().into_iter().map(|x| x.into()).collect();
+            Ok(tensor)
+        }
+        _ => Err(OnnxError::new("Unsupported data type")),
+    }
+}
+
+#[derive(Debug)]
+struct OnnxError {
+    message: String,
+}
+
+impl OnnxError {
+    fn new(message: &str) -> OnnxError {
+        OnnxError {
+            message: message.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for OnnxError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl Error for OnnxError {
+    fn description(&self) -> &str {
+        &self.message
+    }
+}
 enum OperationType{
     ADD,
     RELU,
@@ -52,17 +115,20 @@ enum OperationType{
     LRN
 
 }
-
+fn type_of<T>(_: T) -> &'static str {
+    type_name::<T>()
+}
+/* 
 fn perform_operation(op: Operation) -> Result<TensorProto, Error>{
     match op.op_type {
         OperationType::ADD => {
-            op_add(op.input, op.op_attributes)
+            //op_add(op.input.ge, )
         }
         OperationType::RELU => {
-            op_relu(op.input)
+            //op_relu(op.input)
         }
         OperationType::EXP => {
-            op_exp
+            //op_exp
         }
         OperationType::CONCAT => {
             return
@@ -109,17 +175,16 @@ fn perform_operation(op: Operation) -> Result<TensorProto, Error>{
     }
 }
 
-fn op_add(input: Vec<TensorProto>, op_attributes: Vec<AttributeProto>) -> Result<TensorProto, Error>{
-    let a: ArrayD<f32> = input.get(0).unwrap().into();
-    let b: ArrayD<f32> = input.get(0).unwrap().into();
-    let c = a+b;
-    println!("{:?}", c);
-    return Ok(TensorProto::from(c));
+  
+fn op_add(tensor1:TensorProto,tensor2 :TensorProto) -> Result<TensorProto, Error>{
+    let array1=into(tensor1).unwrap();
+    let array2=into(tensor2).unwrap();
+    return Ok(from(array1+array2));
     
 }
-
-fn op_relu(input: Vec<TensorProto>)->Result<TensorProto, Error>{
-    let a: ArrayD<f32> = input.get(0).unwrap().into();
+ 
+fn op_relu(input: TensorProto)->Result<TensorProto, Error>{
+    let a: ArrayD<f32> = into(input).unwrap();
     for i in 0..a.len() {
         if a[i].clone() < 0.0 {
             a[i] = 0.0;
@@ -127,14 +192,14 @@ fn op_relu(input: Vec<TensorProto>)->Result<TensorProto, Error>{
     }
     return Ok(TensorProto::from(a));
 }
-fn op_exp(){
 
+fn op_exp(){
+    todo!()
 }
-fn op_concat<'a, A, D>(arrays: &[ArrayView<'a, A, D>], axis: i32) -> Array<A, D>
+fn op_concat<T>(tensor1: TensorProto, tensor2: TensorProto) -> Result<ArrayD<T>, &'static str>
 where
-    A: Clone,
-    D: Dimension,
-    {
+    T: From<f32> + Clone,
+{
     /*
         In ONNX (Open Neural Network Exchange), l'operazione Concat (Concatenazione) è utilizzata per concatenare più tensori lungo una dimensione specifica. Questa operazione è comunemente utilizzata nelle reti neurali per combinare le informazioni provenienti da diverse parti della rete.
 
@@ -180,30 +245,47 @@ where
     [3, 4, 7, 8]]
      */
     // Verifica che le dimensioni siano compatibili
-    let concat_size: usize = arrays.iter().map(|a| a.shape()[axis]).sum();
-    let mut concat_shape = arrays[0].shape().to_vec();
-    concat_shape[axis.index()] = concat_size;
 
-    // Creazione dell'array risultante
-    let mut result = Array::zeros(concat_shape.clone());
-
-    // Copia dei dati negli array risultanti
-    let mut offset = 0;
-    for array in arrays {
-        let mut slices = result.slice_mut(s![..;, ..;]);
-        slices.index_axis_mut(axis, offset..offset + array.shape()[axis.index()]).assign(array);
-        offset += array.shape()[axis.index()];
+    if tensor1.dims != tensor2.dims {
+        return Err("Le dimensioni dei tensori non sono compatibili per la concatenazione");
     }
+    
+    let shape: Vec<usize> = tensor1.dims.iter().map(|dim| *dim as usize).collect();
+    let arr1= into(tensor1).unwrap();
+    let arr2= into(tensor2).unwrap();   
 
-    result
+    let concatenated_array = ndarray::stack(Axis(1), &[arr1.view(), arr2.view()]).unwrap();
+    Ok(TensorProto::from(concatenated_array))
 
+        
 
 }
-fn op_flatten(){
+*/
+
+fn op_flatten(tensor: TensorProto) -> Result<TensorProto, OnnxError>
+
+{
+    // OK
+    let array : ArrayD<f32> =into(tensor.clone()).unwrap();
+    let len = array.len();
+
+    // Usa into_shape per convertire l'array in uno monodimensionale
+    let arr=array.into_shape(IxDyn(&[len])).unwrap();
+    return Ok(from(arr,tensor.name).unwrap())
 
 }
-fn op_reshape<A: Clone, D: ndarray::Dimension>(input: &Array<A, D>, new_shape: D) -> Array<A, D> {
-    input.clone().into_shape(new_shape).unwrap()
+/* 
+fn op_reshape<T>(tensor: TensorProto, new_shape: Vec<usize>) -> Result<ArrayD<T>, &'static str>
+where
+    T: From<f32> + Clone,
+{
+    let total_elements: usize = tensor.dims.iter().map(|dim| *dim as usize).product();
+    if total_elements != new_shape.iter().cloned().product() {
+        return Err("La nuova forma non è compatibile con il numero totale di elementi nell'array");
+    }
+    let array: ArrayD<T> = Array::from_shape_vec(IxDyn(&new_shape), tensor.float_data.into_iter().map(T::from).collect()).unwrap();
+    Ok(array)
+       
 
     /*
         L'operazione di Reshape in ONNX (Open Neural Network Exchange) è utilizzata per cambiare la forma (dimensione) di un tensore senza modificarne i dati. Ciò può essere utile, ad esempio, quando si vogliono adattare i risultati di un layer per essere compatibili con il layer successivo.
@@ -243,11 +325,13 @@ fn op_reshape<A: Clone, D: ndarray::Dimension>(input: &Array<A, D>, new_shape: D
     Puoi eseguire l'operazione di Reshape anche con i framework di deep learning come TensorFlow o PyTorch. L'implementazione specifica varierà a seconda del framework che stai utilizzando. 
      */
 }
+/* 
 fn op_conv<A, D>(input: &Array<A, D>, kernel: &Array<A, D>) -> Array<A, D>
 where
     A: Clone + std::ops::Mul<Output = A> + std::ops::Add<Output = A> + Default,
     D: Dimension,
 {
+    // bias opzionale se non è presente salto l'operazione di aggiunta del bias
     let (input_rows, input_cols) = input.dim();
     let (kernel_rows, kernel_cols) = kernel.dim();
 
@@ -482,19 +566,66 @@ fn op_globalavgpool(input: &Array2<f64>, kernel_shape: (usize, usize), pads: (us
     Puoi eseguire l'operazione di Average Pooling su una feature map ONNX utilizzando un framework di deep learning che supporta ONNX, come ad esempio PyTorch o TensorFlow. I dettagli specifici dell'implementazione possono variare a seconda del framework che stai utilizzando.
   */
 }
-fn op_lrn(){
-    
+
+fn lrn<T>(input: &Array<T, ndarray::IxDyn>, alpha: T, beta: T, bias: T, size: usize) -> Array<T, ndarray::IxDyn>
+where
+    T: std::ops::AddAssign + std::ops::Mul<Output = T> + std::ops::Div<Output = T> + Copy,
+{
+    let mut output = Array::zeros(input.shape());
+
+    // Calcola la normalizzazione per ogni punto nel tensore
+    for index in input.indexed_iter() {
+        let i = index.0;
+        let val = *index.1;
+
+        let start_idx = i.saturating_sub(size / 2);
+        let end_idx = (i + size / 2).min(input.len_of(Axis(1)) - 1);
+
+        let square_sum: T = input
+            .slice_axis(Axis(1), start_idx..=end_idx)
+            .iter()
+            .map(|&x| x * x)
+            .sum();
+
+        let normalization = (alpha / (size as f32) * square_sum + bias).powf(beta);
+
+        output[i] = val / normalization;
+    }
+
+    output
 }
-impl <T> Into<ArrayD<T>> for TensorProto {
-    fn into(self) -> ArrayD<T> {
-        let shape = self.dims;
-        match self.data_type {
-            1 => {
-                ArrayD::from_shape_vec(&shape.into_iter().collect_tuple().unwrap(), self.float_data).unwrap()
-            }
-            _ => {
-                panic!("Type not defined")
-            }
+*/
+    /*
+    
+L'operazione LRN (Local Response Normalization) in ONNX (Open Neural Network Exchange) è progettata per normalizzare i valori di un tensore lungo i canali in un'area locale. Questa normalizzazione viene eseguita calcolando la somma dei quadrati dei valori nei vicini di un dato punto lungo i canali e quindi normalizzando il valore originale di quel punto in base alla somma dei quadrati.
+
+L'operazione LRN è comunemente utilizzata nelle reti neurali convoluzionali (CNN) e può contribuire a migliorare la capacità di generalizzazione del modello.
+     In questo esempio:
+
+InputTensor è il tensore di input.
+OutputTensor è il tensore di output dopo l'applicazione dell'operazione LRN.
+alpha, beta, e bias sono parametri che regolano la normalizzazione.
+size rappresenta la dimensione dell'area locale su cui viene calcolata la normalizzazione.
+Si noti che i parametri come alpha, beta, e size possono variare a seconda dell'implementazione specifica o della versione di ONNX. Assicurati di consultare la documentazione di ONNX o specifiche per i dettagli esatti.
+     */
+*/
+fn into<T>(tensor: TensorProto) -> Result<ArrayD<T>, std::io::Error>
+where 
+    T:From<f32> 
+{
+    let shape: Vec<usize> = tensor.dims.iter().map(|dim| *dim as usize).collect();
+
+    match tensor.data_type {
+        1 => {
+            //let float_data: Result<Vec<T>, _> = tensor.float_data.into_iter().map(T::from).collect();
+            let data: Vec<T> = tensor
+            .float_data
+            .iter()
+            .map(|&value| value.into())
+            .collect();
+            Ok(ArrayD::from_shape_vec(IxDyn(&shape), data).unwrap())
         }
+        _ => Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported data type")),
     }
 }
+
