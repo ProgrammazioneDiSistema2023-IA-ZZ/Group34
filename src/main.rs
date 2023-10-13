@@ -6,8 +6,9 @@ mod onnx {
 use core::fmt;
 use std::any::type_name;
 use std::error::Error;
-use std::io::ErrorKind;
+use std::io::{ErrorKind, self, Write};
 use std::ops::Index;
+use std::process::exit;
 use ndarray::{arr2, Array, Array2, Array4, ArrayD, ArrayView,Dimension, IxDyn, s,Axis, Zip};
 use onnx::tensor_proto::DataLocation;
 use tract_onnx::pb::AttributeProto;
@@ -19,8 +20,42 @@ use rand::prelude::*;
 
 
 fn main() {
+    let mut path_model:&str="";
+    loop {
+        println!("Onnx runtime");
+        println!("scegli una rete:");
+        println!("1. mobilenet");
+        println!("2. resnet");
+        println!("3. squeezenet");
+        println!("4. googlenet");
+        println!("5. fine");
+
+        print!("Seleziona un'opzione: ");
+        io::stdout().flush().unwrap();
+
+        let mut choice = String::new();
+        io::stdin().read_line(&mut choice).expect("Errore durante la lettura dell'input");
+
+        // Rimuovi spazi e caratteri di nuova linea dall'input
+        let choice = choice.trim();
+        match choice {
+            "1" => {path_model=&mobilenet_load();break;},
+            "2" => {path_model=&resnet_load();break;},
+            "3" => {path_model=&squeezenet_load(); break;},
+            "4" => {path_model=&googlenet_load(); break;},
+            "5" => {
+                println!("Uscita dal programma");
+                break;
+            }
+            _ => println!("Scelta non valida. Riprova."),
+        }
+    }
     // Load and parse your ProtoBuf file (e.g., "squeezenet.onnx")
-    let data = std::fs::read("src/squeezenet.onnx").expect("Failed to read ProtoBuf file");
+    //let data = std::fs::read("src/squeezenet.onnx").expect("Failed to read ProtoBuf file");
+    if path_model.is_empty(){
+        exit(1)
+    }
+    let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
     let parsed_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
     // Use the parsed ProtoBuf data as needed
@@ -34,6 +69,22 @@ fn main() {
     //let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
     //println!("{:?}", op_add(vec![i, j], vec![]));
 
+}
+fn mobilenet_load()->&'static str {
+    let path_model="src/mobilenet/model.onnx";
+    return path_model
+}
+fn googlenet_load()->&'static str {
+    let path_model="src/googlenet/model.onnx";
+    return path_model
+}
+fn resnet_load()->&'static str {
+    let path_model="src/resnet/model.onnx";
+    return path_model
+}
+fn squeezenet_load()->&'static str {
+    let path_model="src/squeezenet/model.onnx";
+    return path_model
 }
 
 struct Operation{
@@ -260,7 +311,7 @@ where
         
 
 }
-*/
+
 
 fn op_flatten(tensor: TensorProto) -> Result<TensorProto, OnnxError>
 
@@ -274,6 +325,7 @@ fn op_flatten(tensor: TensorProto) -> Result<TensorProto, OnnxError>
     return Ok(from(arr,tensor.name).unwrap())
 
 }
+*/
 /* 
 fn op_reshape<T>(tensor: TensorProto, new_shape: Vec<usize>) -> Result<ArrayD<T>, &'static str>
 where
