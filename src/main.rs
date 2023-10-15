@@ -6,7 +6,8 @@ mod onnx {
 use core::fmt;
 use std::any::type_name;
 use std::error::Error;
-use std::io::{ErrorKind, self, Write};
+use std::fs::File;
+use std::io::{ErrorKind, self, Write, Read};
 use std::ops::Index;
 use std::process::exit;
 use ndarray::{arr2, Array, Array2, Array4, ArrayD, ArrayView,Dimension, IxDyn, s,Axis, Zip};
@@ -21,6 +22,7 @@ use rand::prelude::*;
 
 fn main() {
     let mut path_model:&str="";
+    let mut path_testset:&str="";
     loop {
         println!("Onnx runtime");
         println!("scegli una rete:");
@@ -39,10 +41,78 @@ fn main() {
         // Rimuovi spazi e caratteri di nuova linea dall'input
         let choice = choice.trim();
         match choice {
-            "1" => {path_model=&mobilenet_load();break;},
-            "2" => {path_model=&resnet_load();break;},
-            "3" => {path_model=&squeezenet_load(); break;},
-            "4" => {path_model=&googlenet_load(); break;},
+            "1" => {path_model=&mobilenet_load();
+                    loop {      
+                        io::stdout().flush().unwrap();
+                        println!("vuoi usare il test set di default ? (s/n)");    
+                        let mut choice2 = String::new();
+                        io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                        // Rimuovi spazi e caratteri di nuova linea dall'input
+                        let choice2 = choice2.trim();
+                        match choice2 {
+                                "s" => {path_testset=&mobilenet_load_testset();break;},
+                                "n" => {
+                                    println!("implementare come inserire un test set diverso");
+                                    break;
+                                }
+                            _ => println!("Scelta non valida. Riprova."),
+                        }
+                    
+                    };break;},
+            "2" => {path_model=&resnet_load();
+                loop {        
+                    io::stdout().flush().unwrap();
+                    println!("vuoi usare il test set di default ? (s/n)");    
+                    let mut choice2 = String::new();
+                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    // Rimuovi spazi e caratteri di nuova linea dall'input
+                    let choice2 = choice2.trim();
+                    match choice2 {
+                            "s" => {path_testset=&resnet_load_testset();break;},
+                            "n" => {
+                                println!("implementare come inserire un test set diverso");
+                                break;
+                            }
+                        _ => println!("Scelta non valida. Riprova."),
+                    }
+                
+                };break;},
+            "3" => {path_model=&squeezenet_load();
+                loop {        
+                    io::stdout().flush().unwrap();
+                    println!("vuoi usare il test set di default ? (s/n)");    
+                    let mut choice2 = String::new();
+                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    // Rimuovi spazi e caratteri di nuova linea dall'input
+                    let choice2 = choice2.trim();
+                    match choice2 {
+                            "s" => {path_testset=&squeezenet_load_testset();break;},
+                            "n" => {
+                                println!("implementare come inserire un test set diverso");
+                                break;
+                            }
+                        _ => println!("Scelta non valida. Riprova."),
+                    }
+                
+                };break;},
+            "4" => {path_model=&googlenet_load();
+                loop {        
+                    io::stdout().flush().unwrap();
+                    println!("vuoi usare il test set di default ? (s/n)");    
+                    let mut choice2 = String::new();
+                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    // Rimuovi spazi e caratteri di nuova linea dall'input
+                    let choice2 = choice2.trim();
+                    match choice2 {
+                            "s" => {path_testset=&googlenet_load_testset();break;},
+                            "n" => {
+                                println!("implementare come inserire un test set diverso");
+                                break;
+                            }
+                        _ => println!("Scelta non valida. Riprova."),
+                    }
+                
+                };break;},
             "5" => {
                 println!("Uscita dal programma");
                 break;
@@ -52,35 +122,71 @@ fn main() {
     }
     // Load and parse your ProtoBuf file (e.g., "squeezenet.onnx")
     //let data = std::fs::read("src/squeezenet.onnx").expect("Failed to read ProtoBuf file");
-    if path_model.is_empty(){
+    if path_model.is_empty() || path_testset.is_empty() {
         exit(1)
     }
     let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
     let parsed_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
     // Use the parsed ProtoBuf data as needed
-    let i = parsed_proto.graph.unwrap().initializer.clone();
-    let j = i.clone();
-    let e =i.get(0).unwrap();
-    let es: ArrayD<f32>=into(e.clone()).unwrap();
+    //let i = parsed_proto.graph.unwrap().initializer.clone();
+    //let j = i.clone();
+    //let e =i.get(0).unwrap();
+    //let es: ArrayD<f32>=into(e.clone()).unwrap();
     
-    println!("{:?}", type_of(es.clone()));
-    
+    //println!("{:?}", type_of(es.clone()));
+    for node_iter in parsed_proto.graph.unwrap().node {
+
+    }
     //let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
     //println!("{:?}", op_add(vec![i, j], vec![]));
 
+}
+fn read_input(input: &str) {
+    // Path to your .pb file da concatenare
+    let file_path = input;
+
+    // Open the file
+    let mut file = File::open(file_path).expect("Unable to open file");
+
+    // Read the file contents into a Vec<u8>
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer).expect("Unable to read file");
+
+    // Deserialize the .pb file
+    //let mut message = your_proto::YourMessage::new();  // Replace with your generated protobuf message type
+    //message.merge_from_bytes(&buffer).expect("Unable to parse .pb file");
+
+    // Access the data in the protobuf message
+    //println!("Field value: {:?}", message.get_your_field());
+}
+fn mobilenet_load_testset()->&'static str{
+    let path_testset="src/mobilenet/data_mobilenet/input_0.pb";
+    return path_testset
 }
 fn mobilenet_load()->&'static str {
     let path_model="src/mobilenet/model.onnx";
     return path_model
 }
+fn googlenet_load_testset()->&'static str{
+    let path_testset="src/googlenet/data_googlenet/input_0.pb";
+    return path_testset
+}
 fn googlenet_load()->&'static str {
     let path_model="src/googlenet/model.onnx";
     return path_model
 }
+fn resnet_load_testset()->&'static str{
+    let path_testset="src/resnet/data_resnet/input_0.pb";
+    return path_testset
+}
 fn resnet_load()->&'static str {
     let path_model="src/resnet/model.onnx";
     return path_model
+}
+fn squeezenet_load_testset()->&'static str{
+    let path_testset="src/squeezenet/data_squeezenet/input_0.pb";
+    return path_testset
 }
 fn squeezenet_load()->&'static str {
     let path_model="src/squeezenet/model.onnx";
