@@ -135,9 +135,6 @@ fn main() {
     //let es: ArrayD<f32>=into(e.clone()).unwrap();
     
     //println!("{:?}", type_of(es.clone()));
-    for node_iter in parsed_proto.graph.unwrap().node {
-
-    }
     //let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
     //println!("{:?}", op_add(vec![i, j], vec![]));
 
