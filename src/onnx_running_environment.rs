@@ -1,10 +1,8 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use image::flat::Error;
-
 use crate::OnnxError;
-use crate::onnx::{ModelProto, NodeProto};
-use crate::onnx::{self, TensorProto};
+use crate::onnx::{self, GraphProto, ModelProto, NodeProto, TensorProto};
 use crate::utils::get_random_float_tensor;
 use crate::operations::relu;
 use crate::operations::concat;
@@ -59,7 +57,7 @@ impl OnnxRunningEnvironment {
                 senders: Vec::new(),//è il vettore dei sender che verrà generato in seguito dai nodi che hanno come input l'output del nodo in questione
                 optional_receiver,//receiver da cui leggere gli input
                 node: current_node.clone(),
-                initializers: todo!(),
+                initializers: get_initializers(model.clone().graph.unwrap(), current_node.clone()),
             };
 
             //si inserisce nei nodi che hanno come output gli input del nodo corrente il sender del nodo corrente
@@ -89,10 +87,10 @@ impl OnnxRunningEnvironment {
         thread::scope(|s| {
             for current_node in self.node_io_vec.iter() {
                 s.spawn(|| {
-                    let NodeIO { senders, optional_receiver, .. } = current_node;
+                    let NodeIO { senders, optional_receiver, node, initializers } = current_node;
                     if let Some(receiver) = optional_receiver {
                         let input_data = receiver.recv().unwrap();
-                        //TODO Perform operations
+                        //TODO Perform operations use input_data + initializers
                         let output_data = input_data;
                         for sender in senders.iter() {
                             sender.send(output_data.clone()).expect("TODO: panic message");
@@ -104,6 +102,24 @@ impl OnnxRunningEnvironment {
         let result = self.output_receiver.recv();
         println!("The final result is a tensor of dims: {:?}", result.unwrap().dims)
     }
+}
+
+pub fn get_initializers(graph: GraphProto, node: NodeProto) -> Vec<TensorProto> {
+    let mut return_inits: Vec<TensorProto> = vec![];
+    if node.input.len() > 1 {
+        let inits_from_graph = graph.initializer;
+        let requested_inits_names: Vec<String> = node.clone().input.drain(1..).collect();
+        println!("{:?}", requested_inits_names);
+        requested_inits_names.iter().for_each(|requested_init_name| {
+            for init in inits_from_graph.iter() {
+                if init.name == requested_init_name.to_owned() {
+                    return_inits.push(init.clone());
+                    continue;
+                };
+            }
+        });
+    }
+    return_inits
 }
 
 #[derive(Debug)]
