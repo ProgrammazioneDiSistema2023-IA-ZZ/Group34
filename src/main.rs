@@ -133,10 +133,11 @@ fn main() {
     //let j = i.clone();
     //let e =i.get(0).unwrap();
     //let es: ArrayD<f32>=into(e.clone()).unwrap();
-    
+    println!("starting Network...");
     //println!("{:?}", type_of(es.clone()));
     //let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
     //println!("{:?}", op_add(vec![i, j], vec![]));
+    
 
 }
 fn read_input(input: &str) {
@@ -156,6 +157,10 @@ fn read_input(input: &str) {
 
     // Access the data in the protobuf message
     //println!("Field value: {:?}", message.get_your_field());
+    
+    // If not preprocessing, proceed with model loading and inference
+   
+
 }
 fn mobilenet_load_testset()->&'static str{
     let path_testset="src/mobilenet/data_mobilenet/input_0.pb";
