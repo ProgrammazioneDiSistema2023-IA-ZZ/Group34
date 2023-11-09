@@ -22,7 +22,6 @@ impl OnnxRunningEnvironment {
         let input_node_name: &String = &graph.input.get(0).unwrap().name;
         let output_node_name: &String = &graph.output.get(0).unwrap().name;
         let mut optional_receiver: Option<Receiver<TensorProto>> = None;
-        println!("{:?}", graph.output);
         for current_node in graph.node.into_iter() {
             let (sender, receiver) = channel();
 
@@ -31,7 +30,6 @@ impl OnnxRunningEnvironment {
             }
 
             if current_node.output.contains(&output_node_name) {
-                println!("{:?}", current_node);
                 output_receiver = Some(receiver);
                 optional_receiver = None;
             } else {
@@ -71,17 +69,17 @@ impl OnnxRunningEnvironment {
 
         thread::scope(|s| {
             for current_node in self.node_io_vec.iter() {
-                let NodeIO {senders, optional_receiver, .. } = current_node;
-                if let Some(receiver) = optional_receiver {
-                    s.spawn(|| {
+                s.spawn(|| {
+                    let NodeIO { senders, optional_receiver, .. } = current_node;
+                    if let Some(receiver) = optional_receiver {
                         let input_data = receiver.recv().unwrap();
                         //TODO Perform operations
                         let output_data = input_data;
                         for sender in senders.iter() {
                             sender.send(output_data.clone()).expect("TODO: panic message");
                         }
-                    });
-                }
+                    }
+                });
             }
         });
         let result = self.output_receiver.recv();
