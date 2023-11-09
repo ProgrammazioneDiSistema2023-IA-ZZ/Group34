@@ -2,6 +2,25 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use crate::onnx::{ModelProto, NodeProto, TensorProto};
 use crate::utils::get_random_float_tensor;
+use crate::operations::add;
+use crate::operations::relu;
+use crate::operations::concat;
+use crate::operations::exp;
+use crate::operations::add;
+use crate::operations::flatten;
+use crate::operations::reshape;
+use crate::operations::conv;
+use crate::operations::maxpool;
+use crate::operations::batchnorm;
+use crate::operations::dropuot;
+use crate::operations::softmax;
+use crate::operations::gemm;
+use crate::operations::matmul;
+use crate::operations::reducesum;
+use crate::operations::lrn;
+use crate::operations::globalavgsum;
+
+
 
 
 pub struct OnnxRunningEnvironment {
@@ -16,7 +35,7 @@ impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto) -> Self {
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
         let graph = model.clone().graph.unwrap();
-
+        //println!("{?}",graph.unwrap());
         let mut input_senders: Vec<Sender<TensorProto>> = Vec::new();
         let mut output_receiver: Option<Receiver<TensorProto>> = None;
         let input_node_name: &String = &graph.input.get(0).unwrap().name;
@@ -92,8 +111,57 @@ struct NodeIO {
     senders: Vec<Sender<TensorProto>>,
     optional_receiver: Option<Receiver<TensorProto>>,
     node: NodeProto,
+    initializers: Vec<TensorProto>,
 }
-
 unsafe impl Send for NodeIO {}
 
 unsafe impl Sync for NodeIO {}
+
+//fn find_and_do_operation(node_for_op:NodeProto,inputs: &Vec<&TensorProto>,initializers: Option<&Vec<&TensorProto>>,node: &NodeProto,){
+fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO){
+    //op type è una string che indica  l'operazione da fare serve copiare e incollare il match che avevo fatto in protoc
+    // gioele copialo e incollalo 
+    let str_op=node_for_op.op_type.clone().as_str();
+    println!("{}",node_for_op.op_type.clone());
+    // match --> redirect alle operazioni in operations
+    match str_op {
+        "ADD" => add(inputs, nodeio.initializers,nodeio.node ),
+        "RELU" => relu(inputs, nodeio.initializers, nodeio.node ),
+        "EXP" => exp(inputs, nodeio.initializers, nodeio.node ),
+        "CONCAT" => concat(inputs, nodeio.initializers, nodeio.node ),
+        "FLATTEN" => flatten(inputs, nodeio.initializers, nodeio.node ),
+        "RESHAPE" => reshape(inputs, nodeio.initializers, nodeio.node ),
+        "CONV" => conv(inputs, nodeio.initializers, nodeio.node ),
+        "MAXPOOL" => maxpool(inputs, nodeio.initializers, nodeio.node ),
+        "BATCHNORM" => batchnorm(inputs, nodeio.initializers, nodeio.node ),
+        "DROPOUT" => dropuot(inputs, nodeio.initializers, nodeio.node ),
+        "SOFTMAX" => softmax(inputs, nodeio.initializers, nodeio.node ),
+        "GEMM" => gemm(inputs, nodeio.initializers, nodeio.node ),
+        "MATMUL" => matmul(inputs, nodeio.initializers, nodeio.node ),
+        "REDUCESUM" => reducesum(inputs, nodeio.initializers, nodeio.node ),
+        "GLOBALAVGPOOL" => globalavgsum(inputs, nodeio.initializers, nodeio.node ),
+        "LRN" => lrn(inputs, nodeio.initializers, nodeio.node ),
+        _ => println!("Operazione sconosciuta"),
+    }
+
+}
+
+
+enum OperationType {
+    ADD,
+    RELU,
+    EXP,
+    CONCAT,
+    FLATTEN,
+    RESHAPE,
+    CONV,
+    MAXPOOL,
+    BATCHNORM,
+    DROPOUT,
+    SOFTMAX,
+    GEMM,
+    MATMUL,
+    REDUCESUM,
+    GLOBALAVGPOOL,
+    LRN,
+}

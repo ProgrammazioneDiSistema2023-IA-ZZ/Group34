@@ -18,7 +18,6 @@ use onnx::ModelProto;
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use rand::prelude::*;
-use crate::onnx_running_environment::OnnxRunningEnvironment;
 
 
 mod onnx_running_environment;
@@ -152,16 +151,7 @@ fn main() {
     }
     let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
     let parsed_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
-
-    // Use the parsed ProtoBuf data as needed
-    //let i = parsed_proto.graph.unwrap().initializer.clone();
-    //let j = i.clone();
-    //let e =i.get(0).unwrap();
-    //let es: ArrayD<f32>=into(e.clone()).unwrap();
     println!("starting Network...");
-    //println!("{:?}", type_of(es.clone()));
-    //let matrix = Array4::from_shape_vec((64, 16,1,1), i.float_data).unwrap();
-    //println!("{:?}", op_add(vec![i, j], vec![]));
     let new_env = OnnxRunningEnvironment::new(parsed_proto);
     new_env.run();
 }
