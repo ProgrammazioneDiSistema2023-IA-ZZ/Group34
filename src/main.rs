@@ -17,6 +17,7 @@ use tract_onnx::prelude::tract_itertools::Itertools;
 use onnx::ModelProto;
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
+use crate::onnx_running_environment::OnnxRunningEnvironment;
 use rand::prelude::*;
 
 

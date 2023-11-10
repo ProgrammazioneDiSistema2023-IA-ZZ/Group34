@@ -2,6 +2,10 @@
 name = "Group34"
 version = "0.1.0"
 edition = "2021"
+exclude = ["index.node"]
+
+[lib]
+crate-type = ["cdylib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -19,6 +23,11 @@ rand = "0.8.5"
 
 [build-dependencies]
 prost-build = "0.11.8"
+
+[dependencies.neon]
+version = "0.10"
+default-features = false
+features = ["napi-6"]
 
 
 
