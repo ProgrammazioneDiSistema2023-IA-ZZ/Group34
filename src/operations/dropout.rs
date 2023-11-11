@@ -1,8 +1,6 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,
-};
+}, onnx::{NodeProto, TensorProto}, OnnxError};
 use ndarray::prelude::*;
 use rand::{Rng, SeedableRng};
 
@@ -51,12 +49,12 @@ pub fn dropout(
         Some(tensor_protos) => {
             let ratio = tensor_protos
                 .get(0)
-                .and_then(|tp| tp.get_float_data().get(0))
+                .and_then(|tp| tp.float_data.get(0))
                 .cloned()
                 .unwrap_or(0.5);
             let training_mode = tensor_protos
                 .get(1)
-                .and_then(|tp| tp.get_int64_data().get(0))
+                .and_then(|tp| tp.int64_data.get(0))
                 .cloned()
                 .unwrap_or(0);
 
@@ -70,7 +68,7 @@ pub fn dropout(
         return result;
     }
 
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let seed = get_int_attribute(&attributes, "seed", Some(rand::thread_rng().gen()))?;
 
     // Compute the scale

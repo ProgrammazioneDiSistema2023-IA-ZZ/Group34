@@ -1,11 +1,9 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_float_attribute, get_int_attribute,
     tensor_proto_to_ndarray,
-};
+}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
-use rayon::prelude::*;
+//use rayon::prelude::*;
 
 pub enum OperationMode {
     Gemm,
@@ -54,7 +52,7 @@ pub fn gemm(
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract operation attributes and decide the operation mode.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let mode = determine_mode(&node.op_type)?;
 
     // Fetch operation attributes.
@@ -155,7 +153,7 @@ fn matrix_multiply_batched(
 
     // Parallel processing of the batch
     let result_list: Vec<_> = (0..batch_size)
-        .into_par_iter()
+        .into_iter()
         .map(|i| {
             let a_slice = a.slice(s![i, ..]);
             a_slice.dot(b_matrix)

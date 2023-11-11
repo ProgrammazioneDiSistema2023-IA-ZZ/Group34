@@ -17,11 +17,14 @@ use tract_onnx::prelude::tract_itertools::Itertools;
 use onnx::ModelProto;
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
+use crate::onnx_running_environment::OnnxRunningEnvironment;
 use rand::prelude::*;
 
 
 mod onnx_running_environment;
 mod utils;
+mod operations;
+
 
 
 fn main() {
@@ -254,9 +257,48 @@ fn from<T>(array: ArrayD<T>, name: String) -> Result<TensorProto, OnnxError>
 }
 
 #[derive(Debug)]
-struct OnnxError {
-    message: String,
+pub enum OnnxError {
+    /// Indicates that a required attribute was not found.
+    ///
+    /// The contained `String` provides the name or identifier of the missing attribute.
+    AttributeNotFound(String),
+
+    /// Represents generic internal errors that might occur during processing.
+    ///
+    /// The contained `String` provides a description or message detailing the nature of the internal error.
+    InternalError(String),
+
+    /// Indicates an error that occurred during data type conversion.
+    ///
+    /// The contained `String` provides additional information about the conversion that failed.
+    ConversionError(String),
+
+    /// Represents an error where an operation or functionality is not supported.
+    ///
+    /// The contained `String` provides details about the unsupported operation.
+    UnsupportedOperation(String),
+
+    /// Indicates a mismatch between expected and actual tensor shapes.
+    ///
+    /// The contained `String` provides details about the shape mismatch, such as the expected vs. actual dimensions.
+    ShapeMismatch(String),
+
+    /// Represents an error where an expected input tensor or data is missing.
+    ///
+    /// The contained `String` provides details about the missing input.
+    MissingInput(String),
+
+    /// Indicates an error due to invalid data or values.
+    ///
+    /// The contained `String` provides details about the nature of the invalid data.
+    InvalidValue(String),
+
+    /// Indicates an error related to tensor shape computations.
+    ///
+    /// The contained `String` provides details about the shape computation error.
+    ShapeError(String),
 }
+
 
 impl OnnxError {
     fn new(message: &str) -> OnnxError {
@@ -277,6 +319,15 @@ impl Error for OnnxError {
         &self.message
     }
 }
+impl TensorProto {
+    pub fn new() -> TensorProto {
+        ::std::default::Default::default()
+    }
+    pub fn set_dims(&mut self, v: ::std::vec::Vec<i64>) {
+        self.dims = v;
+    }
+}
+
 
 enum OperationType {
     ADD,

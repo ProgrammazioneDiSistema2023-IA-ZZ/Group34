@@ -1,9 +1,7 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, stack_along_batch_dimension,
     tensor_proto_to_ndarray,
-};
+}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
 
 /// `reduce_sum` - ONNX Node Implementation for Reducing Sum Operation
@@ -55,8 +53,8 @@ use ndarray::prelude::*;
 /// The operation will compute sums along the specified axis or if the axis is -1, it computes
 /// the sum of all elements. If `noop_with_empty_axes` is set to 0 and the result has no elements,
 /// the operation will return a copy of the input tensor.
-pub fn reduce_sum(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
-    let attributes = extract_attributes(node.get_attribute())?;
+pub fn reducesum(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let attributes = extract_attributes(&node.attribute)?;
 
     let axis = get_int_attribute(&attributes, "axis", Some(-1))?;
     let keepdims = get_int_attribute(&attributes, "keepdims", Some(1))?;

@@ -1,11 +1,10 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{
+
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_float_attribute, stack_along_batch_dimension,
     tensor_proto_to_ndarray,
-};
+}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
-use rayon::prelude::*;
+//use rayon::prelude::*;
 
 /// `batch_normalization` - ONNX Node Implementation for Batch Normalization
 ///
@@ -32,13 +31,13 @@ use rayon::prelude::*;
 /// ```rust
 /// let result = batch_normalization(&input_tensor, &parameter_tensors, &node);
 /// ```
-pub fn batch_normalization(
+pub fn batch_norm(
     input: &TensorProto,
     initializers: &Vec<&TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract node attributes.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let epsilon = get_float_attribute(&attributes, "epsilon", Some(1e-05))?;
 
     // Convert TensorProtos to ndarrays.
@@ -69,7 +68,7 @@ pub fn batch_normalization(
 
     // Process batches.
     let result_list: Vec<_> = (0..batch_size)
-        .into_par_iter()
+        .into_iter()
         .map(|i| {
             let batch_data = x.index_axis(Axis(0), i);
 

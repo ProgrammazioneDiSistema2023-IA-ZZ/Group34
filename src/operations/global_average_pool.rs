@@ -1,11 +1,8 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, stack_along_batch_dimension,
     tensor_proto_to_ndarray,
-};
+}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
-use rayon::prelude::*;
 
 /// `global_average_pool` - ONNX Node Implementation for Global Average Pooling Operation
 ///
@@ -37,7 +34,7 @@ pub fn global_average_pool(
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract node attributes (not used in this function, but might be needed for future extensions).
-    let _attributes = extract_attributes(node.get_attribute())?;
+    let _attributes = extract_attributes(&node.attribute)?;
 
     // Convert the input TensorProto to an ndarray.
     let inputs_nd_array = tensor_proto_to_ndarray::<f32>(inputs)?;
@@ -69,7 +66,7 @@ fn global_average_pooling(input_tensor: &ArrayD<f32>) -> Result<ArrayD<f32>, Onn
 
     // Perform global average pooling for each batch and channel.
     let pooled_results: Vec<_> = (0..batch_size)
-        .into_par_iter()
+        .into_iter()
         .map(|b| {
             let mut channel_averages = vec![0.0; channels];
             for c in 0..channels {

@@ -1,7 +1,4 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{convert_to_output_tensor, tensor_proto_to_ndarray};
-
+use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, OnnxError};
 /// `flatten` - ONNX Node Implementation for Flatten Operation
 ///
 /// Reshapes the provided input tensor into a 2D matrix by flattening the tensor's
@@ -36,7 +33,7 @@ use crate::onnx_rustime::ops::utils::{convert_to_output_tensor, tensor_proto_to_
 /// ```
 pub fn flatten(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
     // Extract dimensions from the input tensor.
-    let input_shape = input.get_dims();
+    let input_shape = input.dims;
     let input_first = input_shape[0] as usize;
 
     // Convert the input TensorProto to an ndarray.
@@ -47,13 +44,13 @@ pub fn flatten(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, Onn
     let mut output_shape: Vec<usize> = Vec::new();
 
     // Extract the 'axis' attribute from the node.
-    let axis_attribute = node
-        .get_attribute()
+    let axis_attribute = &node
+        .attribute
         .iter()
-        .find(|attr| attr.get_name() == "axis");
+        .find(|attr| attr.name == "axis");
 
     // Determine the axis value; default is 1 if not provided.
-    let axis = axis_attribute.map_or(1, |attr| attr.get_i() as usize);
+    let axis = axis_attribute.map_or(1, |attr| attr.i as usize);
 
     // Compute the total number of elements from the axis to the last dimension.
     let total_elements = input_shape.clone()[1..].iter().product::<i64>() as usize;

@@ -1,6 +1,4 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::gemm::gemm;
+use crate::{operations::gemm::gemm, onnx::{TensorProto, NodeProto}, OnnxError};
 
 /// `matmul` - ONNX Node Implementation for Matrix Multiplication (MatMul) Operation
 ///

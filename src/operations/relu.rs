@@ -1,6 +1,4 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::utils::tensor_proto_to_ndarray;
+use crate::{operations::utils::tensor_proto_to_ndarray, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::ArrayD;
 
 use super::utils::convert_to_output_tensor;

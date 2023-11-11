@@ -1,10 +1,8 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, stack_along_batch_dimension, tensor_proto_to_ndarray,
-};
+}, OnnxError, onnx::{NodeProto, TensorProto}};
 use ndarray::prelude::*;
-use rayon::prelude::*;
+
 
 /// `exp` - ONNX Node Implementation for Exponential Operation
 ///
@@ -44,7 +42,7 @@ pub fn exp(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxErr
 
     // Compute the exponential for each batch in parallel.
     let results: Vec<_> = (0..batch_size)
-        .into_par_iter()
+        .into_iter()
         .map(|i| {
             let batch_data = input_nd_array.index_axis(Axis(0), i);
             batch_data.mapv(|el| el.exp())

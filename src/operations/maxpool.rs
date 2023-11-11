@@ -1,11 +1,9 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, get_ints_attribute,
     pad_matrix_2d, tensor_proto_to_ndarray,
-};
+}, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
-use rayon::prelude::*;
+//use rayon::prelude::*;
 
 /// `maxpool` - ONNX Node Implementation for Maximum Pooling Operation
 ///
@@ -54,7 +52,7 @@ use rayon::prelude::*;
 /// utilized. While `auto_pad` is mentioned in the official documentation, it is marked as
 /// DEPRECATED, and its usage should be avoided in modern implementations.
 pub fn maxpool(inputs: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
 
     // 2D-maxpool kernel and stride are always 2D
     let kernel_shape = get_ints_attribute(&attributes, "kernel_shape", Some(vec![1, 1]))?;
@@ -113,7 +111,7 @@ fn pool(
 
             // Parallelize the pooling operation
             let pooled_matrix = (0..output_rows)
-                .into_par_iter()
+                .into_iter()
                 .map(|i| {
                     let mut row = Vec::with_capacity(output_cols);
 

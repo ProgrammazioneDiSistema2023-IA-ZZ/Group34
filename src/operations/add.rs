@@ -1,6 +1,4 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{convert_to_output_tensor, tensor_proto_to_ndarray};
+use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
 
 /// `add` - ONNX Node Implementation for Element-wise Addition

@@ -1,8 +1,5 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::utils::{
-    convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,
-};
+use crate::{operations::utils::{
+    convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,}, onnx::{NodeProto, TensorProto}, OnnxError};
 use ndarray::*;
 
 /// `concat` - ONNX Node Implementation for Concatenation
@@ -27,7 +24,7 @@ use ndarray::*;
 /// ```
 pub fn concat(inputs: &Vec<&TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
     // Extract node attributes.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let axis = get_int_attribute(&attributes, "axis", None)? as usize;
 
     let inputs_nd_array: Vec<_> = inputs

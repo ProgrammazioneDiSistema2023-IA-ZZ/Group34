@@ -1,8 +1,8 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
-use crate::onnx::{ModelProto, NodeProto, TensorProto};
+use crate::onnx::{ModelProto, NodeProto};
+use crate::onnx::{self, TensorProto};
 use crate::utils::get_random_float_tensor;
-use crate::operations::add;
 use crate::operations::relu;
 use crate::operations::concat;
 use crate::operations::exp;
@@ -11,18 +11,14 @@ use crate::operations::flatten;
 use crate::operations::reshape;
 use crate::operations::conv;
 use crate::operations::maxpool;
-use crate::operations::batchnorm;
-use crate::operations::dropuot;
+use crate::operations::batch_norm;
+use crate::operations::dropout;
 use crate::operations::softmax;
 use crate::operations::gemm;
 use crate::operations::matmul;
 use crate::operations::reducesum;
 use crate::operations::lrn;
-use crate::operations::globalavgsum;
-
-
-
-
+use crate::operations::global_average_pool;
 pub struct OnnxRunningEnvironment {
     input_tensor: TensorProto,
     input_senders: Vec<Sender<TensorProto>>,
@@ -60,6 +56,7 @@ impl OnnxRunningEnvironment {
                 senders: Vec::new(),//è il vettore dei sender che verrà generato in seguito dai nodi che hanno come input l'output del nodo in questione
                 optional_receiver,//receiver da cui leggere gli input
                 node: current_node.clone(),
+                initializers: todo!(),
             };
 
             //si inserisce nei nodi che hanno come output gli input del nodo corrente il sender del nodo corrente
@@ -125,22 +122,22 @@ fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO){
     println!("{}",node_for_op.op_type.clone());
     // match --> redirect alle operazioni in operations
     match str_op {
-        "ADD" => add(inputs, nodeio.initializers,nodeio.node ),
-        "RELU" => relu(inputs, nodeio.initializers, nodeio.node ),
-        "EXP" => exp(inputs, nodeio.initializers, nodeio.node ),
-        "CONCAT" => concat(inputs, nodeio.initializers, nodeio.node ),
-        "FLATTEN" => flatten(inputs, nodeio.initializers, nodeio.node ),
-        "RESHAPE" => reshape(inputs, nodeio.initializers, nodeio.node ),
-        "CONV" => conv(inputs, nodeio.initializers, nodeio.node ),
-        "MAXPOOL" => maxpool(inputs, nodeio.initializers, nodeio.node ),
-        "BATCHNORM" => batchnorm(inputs, nodeio.initializers, nodeio.node ),
-        "DROPOUT" => dropuot(inputs, nodeio.initializers, nodeio.node ),
-        "SOFTMAX" => softmax(inputs, nodeio.initializers, nodeio.node ),
-        "GEMM" => gemm(inputs, nodeio.initializers, nodeio.node ),
-        "MATMUL" => matmul(inputs, nodeio.initializers, nodeio.node ),
-        "REDUCESUM" => reducesum(inputs, nodeio.initializers, nodeio.node ),
-        "GLOBALAVGPOOL" => globalavgsum(inputs, nodeio.initializers, nodeio.node ),
-        "LRN" => lrn(inputs, nodeio.initializers, nodeio.node ),
+        "ADD" => add(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers.clone(),&nodeio.node.clone() ),
+        "RELU" => relu(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "EXP" => exp(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "CONCAT" => concat(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "FLATTEN" => flatten(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "RESHAPE" => reshape(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),//    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
+        "CONV" => conv(&nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
+        "MAXPOOL" => maxpool(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "BATCHNORM" => batch_norm(&nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
+        "DROPOUT" => dropout(&nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
+        "SOFTMAX" => softmax(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "GEMM" => gemm(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
+        "MATMUL" => matmul(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
+        "REDUCESUM" => reducesum(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "GLOBALAVGPOOL" => globalavgpool(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.node ),
+        "LRN" => lrn(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
         _ => println!("Operazione sconosciuta"),
     }
 

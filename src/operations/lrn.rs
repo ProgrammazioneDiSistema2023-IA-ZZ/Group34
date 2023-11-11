@@ -1,11 +1,8 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_float_attribute, get_int_attribute,
     tensor_proto_to_ndarray,
-};
+}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
-use rayon::prelude::*;
 
 /// `lrn` - ONNX Node Implementation for Local Response Normalization (LRN) Operation
 ///
@@ -61,7 +58,7 @@ use rayon::prelude::*;
 /// ```
 pub fn lrn(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
     // Extract node attributes.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let alpha: f32 = get_float_attribute(&attributes, "alpha", Some(0.0001))?;
     let beta: f32 = get_float_attribute(&attributes, "beta", Some(0.75))?;
     let bias: f32 = get_float_attribute(&attributes, "bias", Some(1.0))?;
@@ -77,7 +74,7 @@ pub fn lrn(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxErr
     // Split square_sum into n slices along the batch dimension and iterate in parallel.
     square_sum
         .outer_iter_mut()
-        .into_par_iter()
+        .into_iter()
         .enumerate()
         .for_each(|(b, mut batch_slice)| {
             for idx in 0..c {

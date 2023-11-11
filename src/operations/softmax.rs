@@ -1,8 +1,8 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::exp::exp;
-use crate::onnx_rustime::ops::reduce_sum::reduce_sum;
-use crate::onnx_rustime::ops::utils::{
+use crate::OnnxError;
+use crate::onnx::{TensorProto, NodeProto};
+use crate::operations::exp::exp;
+use crate::operations::reducesum::reducesum;
+use crate::operations::utils::{
     convert_to_output_tensor, stack_along_batch_dimension, tensor_proto_to_ndarray,
 };
 use ndarray::prelude::*;
@@ -40,7 +40,7 @@ pub fn softmax(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, Onn
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
     })?;
 
-    let reduce_nd_array = tensor_proto_to_ndarray::<f32>(&reduce_sum(&exp(input, node)?, node)?)
+    let reduce_nd_array = tensor_proto_to_ndarray::<f32>(&reducesum(&exp(input, node)?, node)?)
         .map_err(|_| {
             OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
         })?;

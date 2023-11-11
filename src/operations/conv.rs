@@ -1,12 +1,11 @@
-use crate::onnx_rustime::backend::helper::{Attribute, OnnxError};
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::{NodeProto, TensorProto};
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, get_ints_attribute,
-    get_string_attribute, pad_matrix_3d, stack_along_batch_dimension, tensor_proto_to_ndarray,
-};
+    get_string_attribute, pad_matrix_3d, stack_along_batch_dimension, tensor_proto_to_ndarray, }, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
 use num_traits::Float;
-use rayon::prelude::*;
+
+use super::utils::Attribute;
+//use rayon::prelude::*;
 
 pub type DataRepresentation<F> = Array3<F>;
 
@@ -388,7 +387,7 @@ pub fn conv(
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract the attributes from the node.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
 
     // Convert the input TensorProto to a ndarray.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(inputs)?;
@@ -403,10 +402,10 @@ pub fn conv(
     let auto_pad = get_string_attribute(&attributes, "auto_pad", Some("NOT_SET".to_string()))?;
     let kernel = tensor_proto_to_ndarray::<f32>(initializers[0])?
         .into_shape((
-            initializers[0].get_dims()[0] as usize,
-            initializers[0].get_dims()[1] as usize,
-            initializers[0].get_dims()[2] as usize,
-            initializers[0].get_dims()[3] as usize,
+            initializers[0].dims[0] as usize,
+            initializers[0].dims[1] as usize,
+            initializers[0].dims[2] as usize,
+            initializers[0].dims[3] as usize,
         ))
         .map_err(|_| OnnxError::ShapeError("Failed to create kernel matrix".to_string()))?;
 
@@ -442,7 +441,7 @@ pub fn conv(
 
     // Parallelize the convolution operation for each input in the batch.
     let result_list: Vec<_> = (0..batch_size)
-        .into_par_iter()
+        .into_iter()
         .map(|i| {
             let current_input = &input[i];
             let group_results: Vec<_> = (0..group)

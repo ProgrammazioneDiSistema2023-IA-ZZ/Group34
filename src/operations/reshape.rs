@@ -1,8 +1,6 @@
-use crate::onnx_rustime::backend::helper::OnnxError;
-use crate::onnx_rustime::onnx_proto::onnx_ml_proto3::*;
-use crate::onnx_rustime::ops::utils::{
+use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,
-};
+}, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
 
 fn reshape_single_tensor(
@@ -46,7 +44,7 @@ fn reshape_with_batches(
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract node attributes.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let allow_zero: i64 = get_int_attribute(&attributes, "allow_zero", Some(0))?;
 
     // Retrieve the data tensor either from `inputs` or from `initializers`.
@@ -75,7 +73,7 @@ fn reshape_without_batches(
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract node attributes.
-    let attributes = extract_attributes(node.get_attribute())?;
+    let attributes = extract_attributes(&node.attribute)?;
     let allow_zero: i64 = get_int_attribute(&attributes, "allow_zero", Some(0))?;
 
     let input_nd_array = tensor_proto_to_ndarray::<f32>(initializers[0])?;
