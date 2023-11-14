@@ -302,29 +302,25 @@ pub enum OnnxError {
 
 impl OnnxError {
     fn new(message: &str) -> OnnxError {
-        OnnxError {
-            message: message.to_string(),
-        }
+        
+        OnnxError::InternalError(message.to_string())
     }
 }
 
-impl fmt::Display for OnnxError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
+// impl fmt::Display for OnnxError {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "{}", self.message)
+//     }
+// }
 
-impl Error for OnnxError {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}
+// impl Error for OnnxError {
+//     fn description(&self) -> &str {
+//         &self.message
+//     }
+// }
 impl TensorProto {
     pub fn new() -> TensorProto {
         ::std::default::Default::default()
-    }
-    pub fn set_dims(&mut self, v: ::std::vec::Vec<i64>) {
-        self.dims = v;
     }
 }
 

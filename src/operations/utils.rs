@@ -33,21 +33,39 @@ use crate::{onnx::{
 use ndarray::*;
 use std::collections::HashMap;
 use crate::onnx::attribute_proto;
-use protobuf::{ProtobufEnum, RepeatedField};
-/// `TensorType` defines a trait for data types used in Tensors.
-///
-/// This trait provides methods for extracting data from a tensor and
-/// converting an array to tensor data.
-macro_rules! set_repeated {
-    ($proto: ident . $setter: ident ( $val: ident ) ) => {
-        $proto.$setter(RepeatedField::from_vec($val))
-    };
-    ($proto: ident . $setter: ident ( $val: ident .into() ) ) => {
-        $proto.$setter(RepeatedField::from_vec(
-            $val.into_iter().map(Into::into).collect(),
-        ))
-    };
+
+
+#[allow(dead_code)]
+pub enum TensorValue {
+    Float(Vec<f32>),
+    UInt8(Vec<u8>),
+    Int8(Vec<i8>),
+    UInt16(Vec<u16>),
+    Int16(Vec<i16>),
+    Int32(Vec<i32>),
+    Int64(Vec<i64>),
+    String(Vec<String>),
+    Bool(Vec<bool>),
+    Double(Vec<f64>),
+    UInt32(Vec<u32>),
+    UInt64(Vec<u64>),
 }
+
+macro_rules! set_tensor_data {
+  ($proto: ident, $vals: ident $(| $type: ident $proto_type: ident $setter: ident)+) => {
+      match $vals {
+          TensorValue::Bool(vals) => {
+              $proto.set_int32_data(vals.into_iter().map(|v| if v { 1 } else { 0 }).collect());
+              $proto.set_data_type(TensorProto_DataType::BOOL as i32);
+          }
+          $(TensorValue::$type(vals) => {
+              $proto.$setter(vals.into_iter().map(Into::into).collect());
+              $proto.set_data_type(TensorProto_DataType::$proto_type as i32);
+          })+
+      };
+  }
+}
+
 
 pub trait TensorType {
     /// Represents the specific type of data the tensor holds.
@@ -223,7 +241,7 @@ pub fn ndarray_to_tensor_proto<T: TensorType>(
     let tensor_data = T::to_tensor_data(result);
 
     // Construct the TensorProto.
-    Ok(make_tensor(Some(output_name), tensor_dims, tensor_data))
+    Ok(make_tensor(output_name.to_string(), tensor_dims, tensor_data))
 }
 
 /// Converts the result into a `TensorProto` using the output name from the given node.
@@ -336,22 +354,22 @@ pub fn extract_attributes(
         let key = attr.name.to_string();
 
         // Match on the attribute type and extract the value accordingly.
-        let value = match attr.doc_string {
-            attribute_proto::AttributeType::FLOAT.as_str_name() => Attribute::Float(attr.get_f()),
-            attribute_proto::AttributeType::Int => Attribute::Int(attr.get_i()),
-            attribute_proto::AttributeType::String => {
+        let value = match attr.r#type {
+            x if x == attribute_proto::AttributeType::Float as i32 => Attribute::Float(attr.f),
+            x if x == attribute_proto::AttributeType::Int as i32 => Attribute::Int(attr.i),
+            x if x == attribute_proto::AttributeType::String as i32 => {
                 Attribute::String(String::from_utf8(attr.s.to_vec()).map_err(|_| {
                     OnnxError::ConversionError(
                         "Failed to convert bytes to UTF-8 string".to_string(),
                     )
                 })?)
             }
-            attribute_proto::AttributeType::Tensor => Attribute::Tensor(attr.t.clone()),
-            attribute_proto::AttributeType::Graph => Attribute::Graph(attr.g.clone()),
-            attribute_proto::AttributeType::Floats => Attribute::Floats(attr.f.to_vec()),
-            attribute_proto::AttributeType::Ints => Attribute::Ints(attr.i.to_vec()),
-            attribute_proto::AttributeType::Strings => Attribute::Strings(
-                attr.get_strings()
+            x if x == attribute_proto::AttributeType::Tensor as i32 => Attribute::Tensor(attr.t.unwrap().clone()),
+            x if x == attribute_proto::AttributeType::Graph as i32 => Attribute::Graph(attr.g.unwrap().clone()),
+            x if x == attribute_proto::AttributeType::Floats as i32 => Attribute::Floats(attr.floats),
+            x if x == attribute_proto::AttributeType::Ints as i32 => Attribute::Ints(attr.ints),
+            x if x == attribute_proto::AttributeType::Strings as i32 => Attribute::Strings(
+                attr.strings
                     .iter()
                     .map(|s| {
                         String::from_utf8(s.to_vec()).map_err(|_| {
@@ -362,10 +380,10 @@ pub fn extract_attributes(
                     })
                     .collect::<Result<Vec<_>, _>>()?,
             ),
-            AttributeType::TENSORS => {
+            x if x == AttributeType::Tensor as i32 => {
                 Attribute::Tensors(attr.tensors.to_vec())
             }
-            AttributeType::GRAPHS => Attribute::Graphs(attr.graphs.to_vec()),
+            x if x == AttributeType::Graphs as i32 => Attribute::Graphs(attr.graphs.to_vec()),
             _ => {
                 return Err(OnnxError::UnsupportedOperation(
                     "Unsupported attribute type".to_string(),
@@ -799,14 +817,14 @@ pub fn parse_raw_data_as_ints64(raw_data: &[u8]) -> Vec<i64> {
 
     ints64
 }
-pub fn make_tensor<S: Into<String>>(
-    name: Option<S>,
+pub fn make_tensor(
+    name: String,
     dims: Vec<i64>,
     vals: TensorValue,
 ) -> TensorProto {
     let mut tensor_proto = TensorProto::new();
-    tensor_proto.set_dims(dims);
-    set_optional!(tensor_proto.set_name(name));
+    tensor_proto.dims = dims;
+    tensor_proto.name = name;
     set_tensor_data!(tensor_proto, vals
         | Float   FLOAT   set_float_data
         | UInt8   UINT8   set_int32_data
@@ -924,80 +942,50 @@ pub fn make_attribute<S: Into<String>, U: Into<Vec<u8>>>(
     name: S,
     attribute: Attribute<U>,
 ) -> AttributeProto {
-    let mut attr_proto = AttributeProto::new();
-    attr_proto.set_name(name.into());
+    let mut attr_proto : AttributeProto;
+    attr_proto.name = name.into();
     match attribute {
         Attribute::Float(val) => {
-            attr_proto.set_f(val);
-            attr_proto.set_field_type(attribute_proto::AttributeType::Float);
+            attr_proto.f = val;
+            attr_proto.r#type = attribute_proto::AttributeType::Float as i32;
         }
         Attribute::Floats(vals) => {
-            attr_proto.set_floats(vals);
-            attr_proto.set_field_type(attribute_proto::AttributeType::Floats);
+            attr_proto.floats = vals;
+            attr_proto.r#type = attribute_proto::AttributeType::Floats as i32;
         }
         Attribute::Int(val) => {
-            attr_proto.set_i(val);
-            attr_proto.set_field_type(attribute_proto::AttributeType::Int);
+            attr_proto.i = val;
+            attr_proto.r#type = attribute_proto::AttributeType::Int as i32;
         }
         Attribute::Ints(vals) => {
-            attr_proto.set_ints(vals);
-            attr_proto.set_field_type(attribute_proto::AttributeType::Ints);
+            attr_proto.ints = vals;
+            attr_proto.r#type = attribute_proto::AttributeType::Ints as i32;
         }
         Attribute::String(val) => {
-            attr_proto.set_s(val.into());
-            attr_proto.set_field_type(attribute_proto::AttributeType::String);
+            attr_proto.s = val.into();
+            attr_proto.r#type = attribute_proto::AttributeType::String as i32;
         }
         Attribute::Strings(vals) => {
-            attr_proto.set_strings(vals.into_iter().map(Into::into).collect());
-            attr_proto.set_field_type(attribute_proto::AttributeType::Strings);
+            attr_proto.strings = vals.into_iter().map(Into::into).collect();
+            attr_proto.r#type = attribute_proto::AttributeType::Strings as i32;
         }
         Attribute::Graph(val) => {
-            attr_proto.set_g(val);
-            attr_proto.set_field_type(attribute_proto::AttributeType::Graph);
+            attr_proto.g = Some(val);
+            attr_proto.r#type = attribute_proto::AttributeType::Graph as i32;
         }
         Attribute::Graphs(vals) => {
-            set_repeated!(attr_proto.set_graphs(vals));
-            attr_proto.set_field_type(attribute_proto::AttributeType::Graphs);
+            attr_proto.graphs = vals;
+            attr_proto.r#type = attribute_proto::AttributeType::Graphs as i32;
         }
         Attribute::Tensor(val) => {
-            attr_proto.set_t(val);
-            attr_proto.set_field_type(AttributeType::TENSOR);
+            attr_proto.t = Some(val);
+            attr_proto.r#type = attribute_proto::AttributeType::Tensor as i32;
         }
         Attribute::Tensors(vals) => {
-            set_repeated!(attr_proto.set_tensors(vals));
-            attr_proto.set_field_type(AttributeType::TENSORS);
+            attr_proto.tensors = vals;
+            attr_proto.r#type = attribute_proto::AttributeType::Tensors as i32;
         }
-    };
+    }
     attr_proto
 }
 
-#[allow(dead_code)]
-pub enum TensorValue {
-    Float(Vec<f32>),
-    UInt8(Vec<u8>),
-    Int8(Vec<i8>),
-    UInt16(Vec<u16>),
-    Int16(Vec<i16>),
-    Int32(Vec<i32>),
-    Int64(Vec<i64>),
-    String(Vec<String>),
-    Bool(Vec<bool>),
-    Double(Vec<f64>),
-    UInt32(Vec<u32>),
-    UInt64(Vec<u64>),
-}
-
-macro_rules! set_tensor_data {
-  ($proto: ident, $vals: ident $(| $type: ident $proto_type: ident $setter: ident)+) => {
-      match $vals {
-          TensorValue::Bool(vals) => {
-              $proto.set_int32_data(vals.into_iter().map(|v| if v { 1 } else { 0 }).collect());
-              $proto.set_data_type(TensorProto_DataType::BOOL as i32);
-          }
-          $(TensorValue::$type(vals) => {
-              $proto.$setter(vals.into_iter().map(Into::into).collect());
-              $proto.set_data_type(TensorProto_DataType::$proto_type as i32);
-          })+
-      };
-  }
-}
