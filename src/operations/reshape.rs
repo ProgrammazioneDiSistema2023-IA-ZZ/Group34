@@ -3,14 +3,19 @@ use crate::{operations::utils::{
 }, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
 
+// Funzione privata per la riduzione di un singolo tensore secondo una forma target,
+// consentendo un'eventuale dimensione inferita.
+
 fn reshape_single_tensor(
     input: ArrayViewD<f32>,
     shape: &Vec<isize>,
     allow_zero: i64,
 ) -> Result<Array<f32, IxDyn>, OnnxError> {
+    // Variabile per tenere traccia di una possibile dimensione inferita.
     let mut inferred_dim = None;
     let mut target_shape = shape.clone();
 
+    // Itera sulla forma target per risolvere eventuali dimensioni inferite o zero.
     for (i, dim) in target_shape.iter_mut().enumerate() {
         if *dim == -1 {
             if inferred_dim.is_some() {
@@ -26,31 +31,34 @@ fn reshape_single_tensor(
         }
     }
 
+    // Se presente una dimensione inferita, calcola la sua dimensione.
     if let Some(idx) = inferred_dim {
         let product_of_dims: isize = target_shape.iter().filter(|&&dim| dim != -1).product();
-        println!("idx: {:?}", idx);
         target_shape[idx] = (input.len() as isize) / product_of_dims;
     }
 
+    // Applica la nuova forma al tensore.
     Ok(input
         .into_shape(target_shape.iter().map(|&x| x as usize).collect::<Vec<_>>())
         .unwrap()
         .to_owned())
 }
 
+// Funzione privata per la riduzione di un tensore con operazioni batch.
+
 fn reshape_with_batches(
     input: &TensorProto,
     parameter: &TensorProto,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
-    // Extract node attributes.
+    // Estrai attributi specifici del nodo.
     let attributes = extract_attributes(&node.attribute)?;
     let allow_zero: i64 = get_int_attribute(&attributes, "allow_zero", Some(0))?;
 
-    // Retrieve the data tensor either from `inputs` or from `initializers`.
+    // Recupera il tensore dati sia da `inputs` che da `initializers`.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(&input)?;
 
-    // Determine the shape tensor.
+    // Determina il tensore di forma.
     let shape_tensor = parameter;
 
     let mut target_shape: Vec<isize> = tensor_proto_to_ndarray::<i64>(shape_tensor)?
@@ -61,18 +69,20 @@ fn reshape_with_batches(
 
     target_shape[0] *= input_nd_array.shape()[0] as isize;
 
-    // Reshape each batch
+    // Riduci ogni batch separatamente.
     let reshaped_batches =
         reshape_single_tensor(input_nd_array.view(), &target_shape, allow_zero).unwrap();
 
     convert_to_output_tensor(node, reshaped_batches)
 }
 
+// Funzione privata per la riduzione di un tensore senza operazioni batch.
+
 fn reshape_without_batches(
     initializers: &Vec<&TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
-    // Extract node attributes.
+    // Estrai attributi specifici del nodo.
     let attributes = extract_attributes(&node.attribute)?;
     let allow_zero: i64 = get_int_attribute(&attributes, "allow_zero", Some(0))?;
 
@@ -83,47 +93,23 @@ fn reshape_without_batches(
         .map(|&x| x as isize)
         .collect();
 
+    // Riduci il tensore.
     let reshaped = reshape_single_tensor(input_nd_array.view(), &target_shape, allow_zero)?;
+
     convert_to_output_tensor(node, reshaped)
 }
 
-/// `reshape` - ONNX Node Implementation for Tensor Reshaping
-///
-/// The `reshape` operation provides functionality akin to `numpy.reshape`, allowing for the alteration
-/// of tensor dimensions while preserving its data.
-///
-/// # Arguments
-///
-/// * `inputs` - An optional reference to the input tensor. If provided, this tensor will be reshaped.
-/// * `initializers` - Contains tensors essential for the reshaping process. If `inputs` is `None`,
-///   the first tensor in `initializers` will be considered the data tensor. The subsequent tensor in
-///   `initializers` delineates the desired output shape.
-/// * `node` - A reference to the ONNX NodeProto containing node-specific attributes and directives
-///   for the reshaping operation.
-///
-/// # Returns
-///
-/// * `Result<TensorProto, OnnxError>` - Outputs the reshaped tensor. In the event of an issue
-///   during the reshaping process, an error (`OnnxError`) will be returned.
-///
-/// # Errors
-///
-/// Potential issues that can arise:
-/// * The reshaped tensor's dimensions do not match the defined shape.
-/// * Encountering incompatible attributes during the reshaping.
-///
-/// # Notes
-///
-/// The core principles of the reshaping process include:
-/// 1. Only one dimension in the new shape can have a value of -1. In this scenario, the dimension's
-///    value is deduced from the tensor's size and any remaining dimensions.
-/// 2. A dimension might be assigned a value of 0. If the `allowzero` attribute is unset, the dimension's
-///    original value remains unchanged (sourced from the input tensor). If `allowzero` is active, and
-///    the new shape contains a 0, this dimension will be explicitly set to zero.
-/// 3. The total number of elements in both the input tensor's shape and the output tensor's shape must be identical.
-///
-/// Note that specifying a shape that includes both a 0 and a -1 value is invalid when the `allowzero`
-/// attribute is activated.
+//I principi fondamentali del processo di riduzione includono:
+// 1. Solo una dimensione nella nuova forma può avere un valore di -1. In questo scenario, il valore della
+//    dimensione è dedotto dalle dimensioni del tensore e da eventuali dimensioni residue.
+// 2. Una dimensione potrebbe essere assegnata un valore di 0. Se l'attributo `allowzero` non è impostato,
+//    il valore originale della dimensione rimane invariato (estratto dal tensore di input). Se `allowzero`
+//    è attivo e la nuova forma contiene uno 0, questa dimensione verrà esplicitamente impostata a zero.
+// 3. Il numero totale di elementi sia nella forma del tensore di input che nella forma del tensore di output
+//    deve essere identico.
+//
+// Si noti che specificare una forma che include sia uno 0 che un valore di -1 è invalido quando l'attributo
+// `allowzero` è attivato.
 pub fn reshape(
     inputs: Option<&TensorProto>,
     initializers: &Vec<&TensorProto>,

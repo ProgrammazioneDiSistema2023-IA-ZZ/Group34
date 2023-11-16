@@ -2,45 +2,18 @@ use crate::{operations::utils::{
     convert_to_output_tensor, stack_along_batch_dimension, tensor_proto_to_ndarray,
 }, OnnxError, onnx::{NodeProto, TensorProto}};
 use ndarray::prelude::*;
-
-
-/// `exp` - ONNX Node Implementation for Exponential Operation
-///
-/// Evaluates the exponential of each element within the input tensor. The computation takes place
-/// concurrently for each batch present in the input tensor, optimizing performance, especially
-/// for large input batches.
-///
-/// # Arguments
-///
-/// * `input` - A reference to the tensor consisting of values set to be exponentiated.
-/// * `node` - A reference to the ONNX NodeProto which might have node-specific data required
-///   during the subsequent conversion back to TensorProto.
-///
-/// # Returns
-///
-/// * `Result<TensorProto, OnnxError>` - Outputs the tensor with computed exponentials, or
-///   raises an error (`OnnxError`) if any phase of the operation experiences an issue.
-///
-/// # Errors
-///
-/// Potential errors include:
-/// * Conversion from `TensorProto` to ndarray not succeeding.
-///
-/// # Example
-///
-/// ```rust
-/// let exponential_output = exp(&input_tensor, &node);
-/// ```
+// Funzione pubblica per implementare l'operazione di esponenziale in un grafo ONNX.
+// L'operazione di esponenziale calcola l'esponenziale di ciascun elemento del tensore di input.
 pub fn exp(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
-    // Convert the input TensorProto to an ndarray.
+    // Converti il TensorProto di input in un ndarray di tipo f32.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(input).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
     })?;
 
-    // Extract batch size from the input tensor's shape.
+    // Ottieni la dimensione del batch dal tensore di input.
     let batch_size = input_nd_array.shape()[0];
 
-    // Compute the exponential for each batch in parallel.
+    // Applica l'esponenziale a ciascun elemento all'interno di ogni batch.
     let results: Vec<_> = (0..batch_size)
         .into_iter()
         .map(|i| {
@@ -49,9 +22,9 @@ pub fn exp(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxErr
         })
         .collect();
 
-    // Stack the results along the batch dimension.
+    // Combina i risultati lungo la dimensione del batch.
     let stacked_result = stack_along_batch_dimension(results)?;
 
-    // Convert the result ndarray back to TensorProto and return.
+    // Converte il risultato in un TensorProto di output e restituisci.
     convert_to_output_tensor(node, stacked_result)
 }

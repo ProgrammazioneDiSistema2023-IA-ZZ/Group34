@@ -3,85 +3,44 @@ use crate::{operations::utils::{
     pad_matrix_2d, tensor_proto_to_ndarray,
 }, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
-//use rayon::prelude::*;
+// Funzione pubblica per implementare l'operazione di max pooling in un grafo ONNX.
 
-/// `maxpool` - ONNX Node Implementation for Maximum Pooling Operation
-///
-/// The `maxpool` operation is utilized to perform maximum pooling across the input tensor
-/// based on provided kernel sizes, stride sizes, and padding lengths. Maximum pooling involves
-/// selecting the maximum value from a subset of the input tensor according to the specified kernel
-/// size and then downsampling the data into the output tensor for subsequent processing. This operation
-/// is commonly used in Convolutional Neural Networks (CNNs) to reduce spatial dimensions and introduce
-/// spatial invariances.
-///
-/// The calculation of the output spatial shape differs based on whether explicit padding (defined by `pads`)
-/// or auto padding (defined by the now DEPRECATED `auto_pad` attribute) is employed. The operation's behavior
-/// can also be influenced by the `ceil_mode` attribute.
-///
-/// Detailed computation equations and descriptions can be found in the official documentation:
-/// [MaxPool Official ONNX Docs](https://github.com/onnx/onnx/blob/master/docs/Operators.md#MaxPool).
-///
-/// # Arguments
-///
-/// * `inputs` - A reference to the input tensor to be max pooled.
-/// * `node` - A reference to the ONNX NodeProto containing node-specific data and attributes.
-///
-/// # Returns
-///
-/// * `Result<TensorProto, OnnxError>` - Outputs the tensor after max pooling. In case of
-///   an unsuccessful operation, it returns an error (`OnnxError`).
-///
-/// # Errors
-///
-/// Possible errors include, but are not limited to:
-/// * Failure in extracting node attributes.
-/// * Mismatch in tensor dimensions for pooling.
-/// * Inconsistencies in kernel and stride shapes.
-///
-/// # Example
-///
-/// ```rust
-/// let result_tensor = maxpool(&input_tensor, &node);
-/// ```
-///
-/// # Note
-///
-/// The internal behavior of the function (such as calculations for output shape) is
-/// largely determined by various attributes like `kernel_shape`, `pads`, and `strides`.
-/// Additional attributes like `ceil_mode` and `storage_order` are extracted but not currently
-/// utilized. While `auto_pad` is mentioned in the official documentation, it is marked as
-/// DEPRECATED, and its usage should be avoided in modern implementations.
 pub fn maxpool(inputs: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
 
-    // 2D-maxpool kernel and stride are always 2D
+    // Le dimensioni del kernel e dello stride del max pooling sono sempre bidimensionali.
     let kernel_shape = get_ints_attribute(&attributes, "kernel_shape", Some(vec![1, 1]))?;
     let pads = get_ints_attribute(&attributes, "pads", Some(vec![0, 0, 0, 0]))?;
     let strides = get_ints_attribute(&attributes, "strides", Some(vec![1, 1]))?;
 
-    // TODO: ceil_mode storage_order and dilations are not used
+    // TODO: ceil_mode, storage_order e dilations non sono utilizzati
     let _ceil_mode = get_int_attribute(&attributes, "ceil_mode", Some(0))?;
     let _storage_order = get_int_attribute(&attributes, "storage_order", Some(0))?;
     let _dilations = get_ints_attribute(&attributes, "dilations", Some(vec![1, 1]))?;
 
+    // Converti TensorProto in ndarray.
     let inputs_nd_array = tensor_proto_to_ndarray::<f32>(inputs)?;
 
+    // Calcola il risultato del max pooling.
     let result = pool(&inputs_nd_array, &kernel_shape, &pads, &strides)?;
 
+    // Converti il risultato finale in TensorProto e restituisci.
     convert_to_output_tensor(node, result)
 }
 
+// Funzione di supporto per implementare l'operazione di max pooling.
 fn pool(
     input_matrix: &ArrayD<f32>,
     kernel_shape: &Vec<i64>,
     pads: &Vec<i64>,
     strides: &Vec<i64>,
 ) -> Result<ArrayD<f32>, OnnxError> {
-    // Choose the indices of dimensions to extract
+    // Scegli gli indici delle dimensioni da estrarre.
     let batch_size = input_matrix.shape()[0];
     let channels = input_matrix.shape()[1];
 
-    // Extract kernel shape and strides
+    // Estrai la forma del kernel e degli stride.
     let kernel_height = kernel_shape[0] as usize;
     let kernel_width = kernel_shape[1] as usize;
     let stride_height = strides[0] as usize;
@@ -89,9 +48,10 @@ fn pool(
 
     let mut pooled_results = Vec::new();
 
+    // Itera su batch e canali per eseguire il max pooling.
     for b in 0..batch_size {
         for c in 0..channels {
-            // Extract the height-width input matrix
+            // Estrai la matrice di input bidimensionale (altezza x larghezza).
             let h_w_matrix = input_matrix
                 .index_axis(Axis(0), b)
                 .index_axis(Axis(0), c)
@@ -99,17 +59,17 @@ fn pool(
                 .into_shape((input_matrix.shape()[2], input_matrix.shape()[3]))
                 .unwrap();
 
-            // Apply padding to the height-width input matrix
+            // Applica il padding alla matrice di input bidimensionale.
             let padded_matrix = pad_matrix_2d(&h_w_matrix, &pads)?;
 
-            // Extract the dimensions of the padded matrix
+            // Estrai le dimensioni della matrice con padding.
             let (padded_rows, padded_cols) = padded_matrix.dim();
 
-            // Calculate output dimensions
+            // Calcola le dimensioni dell'output.
             let output_rows = (padded_rows - kernel_height) / stride_height + 1;
             let output_cols = (padded_cols - kernel_width) / stride_width + 1;
 
-            // Parallelize the pooling operation
+            // Parallelizza l'operazione di max pooling.
             let pooled_matrix = (0..output_rows)
                 .into_iter()
                 .map(|i| {
@@ -121,10 +81,10 @@ fn pool(
                         let end_row = start_row + kernel_height;
                         let end_col = start_col + kernel_width;
 
-                        // Extract the corresponding patch from the padded matrix
+                        // Estrai la patch corrispondente dalla matrice con padding.
                         let patch = padded_matrix.slice(s![start_row..end_row, start_col..end_col]);
 
-                        // Calculate the max value within the patch
+                        // Calcola il valore massimo all'interno della patch.
                         let max_value = patch.fold(std::f32::NEG_INFINITY, |acc, &x| acc.max(x));
 
                         row.push(max_value);
@@ -138,7 +98,7 @@ fn pool(
         }
     }
 
-    // Convert the collected rows into an ArrayD
+    // Converte le righe raccolte in un ArrayD.
     let pooled_tensor = ArrayD::from_shape_vec(
         IxDyn(&[
             batch_size,

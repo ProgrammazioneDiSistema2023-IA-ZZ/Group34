@@ -3,74 +3,34 @@ use crate::{operations::utils::{
     tensor_proto_to_ndarray,
 }, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
+// Funzione pubblica per implementare l'operazione di riduzione somma in un grafo ONNX.
 
-/// `reduce_sum` - ONNX Node Implementation for Reducing Sum Operation
-///
-/// The `reduce_sum` operation calculates the sum of the elements in the input tensor along
-/// the given axes. Depending on the `keepdims` attribute, the resulting tensor can retain
-/// the same rank as the input or might have the reduced dimension removed. Tensors with
-/// rank zero are valid inputs.
-///
-/// This behavior closely mirrors the behavior of NumPy's sum operation, with the distinction
-/// being that while NumPy defaults the `keepdims` parameter to `False`, this implementation
-/// defaults it to `True`.
-///
-/// # Attributes
-///
-/// * `keepdims` : int (default is 1)
-///   - Decides whether to keep the reduced dimension or not. A default value of 1 indicates
-///     that the reduced dimension should be retained.
-/// * `noop_with_empty_axes` : int (default is 0)
-///   - Defines the behavior when the 'axes' attribute is empty. By default (`false`), all axes
-///     are reduced. If the axes are empty and this attribute is set to true, the input tensor
-///     won't be reduced, resulting in the output tensor being identical to the input tensor.
-///
-/// # Arguments
-///
-/// * `input` - A reference to the input tensor whose elements will be summed.
-/// * `node` - A reference to the ONNX NodeProto containing node-specific data and attributes.
-///
-/// # Returns
-///
-/// * `Result<TensorProto, OnnxError>` - Outputs the tensor after sum reduction. In the event
-///   of an unsuccessful operation, an error (`OnnxError`) is returned.
-///
-/// # Errors
-///
-/// Potential errors include:
-/// * Issues with extracting node attributes.
-/// * Tensor conversion problems.
-/// * Dimension mismatches during tensor operations.
-///
-/// # Example
-///
-/// ```rust
-/// let reduced_tensor = reduce_sum(&input_tensor, &node);
-/// ```
-///
-/// # Note
-///
-/// The operation will compute sums along the specified axis or if the axis is -1, it computes
-/// the sum of all elements. If `noop_with_empty_axes` is set to 0 and the result has no elements,
-/// the operation will return a copy of the input tensor.
 pub fn reducesum(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
 
+    // Ottieni gli attributi specifici per la riduzione somma.
     let axis = get_int_attribute(&attributes, "axis", Some(-1))?;
     let keepdims = get_int_attribute(&attributes, "keepdims", Some(1))?;
     let noop = get_int_attribute(&attributes, "noop_with_empty_axes", Some(0))?;
 
+    // Converti TensorProto in ndarray.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(input).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
     })?;
 
+    // Ottieni la dimensione del batch.
     let batch_size = input_nd_array.shape()[0];
 
+    // Lista per contenere i risultati della riduzione somma.
     let mut result_list = Vec::with_capacity(batch_size);
 
+    // Itera su ciascun batch e calcola la riduzione somma.
     for b in 0..batch_size {
+        // Estrai il campione dal batch.
         let sample = input_nd_array.index_axis(Axis(0), b);
 
+        // Calcola la riduzione somma in base all'asse specificato.
         let result = if axis == -1 {
             let sum = sample.sum();
             let sum_array: Array<f32, _> = Array::from_elem(IxDyn(&[1]), sum);
@@ -82,8 +42,10 @@ pub fn reducesum(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, O
                 (axis + sample.ndim() as i64) as usize
             };
 
+            // Esegue la riduzione somma sull'asse specificato.
             let reduced_array = sample.sum_axis(Axis(axis));
 
+            // Se keepdims è 0, riduci le dimensioni dell'asse ridotto a 1.
             if keepdims == 0 {
                 let mut new_shape = reduced_array.shape().to_vec();
                 new_shape[axis] = 1;
@@ -93,17 +55,20 @@ pub fn reducesum(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, O
             }
         };
 
+        // Aggiungi il risultato alla lista.
         result_list.push(result);
     }
 
-    // Stack the results together
+    // Unisci i risultati lungo la dimensione del batch.
     let result = stack_along_batch_dimension(result_list)?;
 
+    // Se noop è 0 e la lunghezza del risultato è 0, restituisci il vettore di input originale.
     let result = if noop == 0 && result.len() == 0 {
         input_nd_array.clone()
     } else {
         result
     };
 
+    // Converti il risultato finale in TensorProto e restituisci.
     convert_to_output_tensor(node, result)
 }

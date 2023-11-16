@@ -1,67 +1,40 @@
 use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, OnnxError};
-/// `flatten` - ONNX Node Implementation for Flatten Operation
-///
-/// Reshapes the provided input tensor into a 2D matrix by flattening the tensor's
-/// dimensions, starting from the specified `axis` all the way to its last dimension.
-/// When `axis` is not supplied, it uses the default value of 1.
-///
-/// As an illustration, for an input tensor of shape `[a, b, c, d]` combined with an
-/// `axis` value of 2, the output tensor shape would be `[a * b, c * d]`.
-///
-/// # Arguments
-///
-/// * `input` - A reference to the tensor set for flattening.
-/// * `node` - A reference to the ONNX NodeProto that may possess node-specific
-///   attributes. It particularly looks for the `axis` attribute which ascertains
-///   the starting dimension for the flatten operation.
-///
-/// # Returns
-///
-/// * `Result<TensorProto, OnnxError>` - Outputs the tensor in its flattened form, or
-///   returns an error (`OnnxError`) if any part of the operation is unsuccessful.
-///
-/// # Errors
-///
-/// Possible error scenarios are:
-/// * Conversion from `TensorProto` to ndarray not being successful.
-/// * Reshape operation based on the calculated output shape not being successful.
-///
-/// # Example
-///
-/// ```rust
-/// let flattened_tensor = flatten(&input_tensor, &node);
-/// ```
+// Funzione pubblica per implementare l'operazione di flattening in un grafo ONNX.
+// L'operazione di flattening ridimensiona il tensore di input a una forma lineare (1D).
+
 pub fn flatten(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
-    // Extract dimensions from the input tensor.
+    // Ottieni le dimensioni del tensore di input.
     let input_shape = input.dims;
     let input_first = input_shape[0] as usize;
 
-    // Convert the input TensorProto to an ndarray.
+    // Converti il TensorProto di input in un ndarray di tipo f32.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(input).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
     })?;
 
+    // Inizializza la forma del risultato come un vettore di usize vuoto.
     let mut output_shape: Vec<usize> = Vec::new();
 
-    // Extract the 'axis' attribute from the node.
+    // Ottieni l'attributo "axis" dal nodo ONNX.
     let axis_attribute = &node
         .attribute
         .iter()
         .find(|attr| attr.name == "axis");
 
-    // Determine the axis value; default is 1 if not provided.
+    // Se l'attributo "axis" non è presente, assume il valore predefinito 1.
     let axis = axis_attribute.map_or(1, |attr| attr.i as usize);
 
-    // Compute the total number of elements from the axis to the last dimension.
+    // Calcola il numero totale di elementi nel tensore, escludendo la dimensione del batch.
     let total_elements = input_shape.clone()[1..].iter().product::<i64>() as usize;
 
-    // Determine the shape of the output tensor based on the axis.
+    // Determina la forma del risultato in base all'asse di flattening.
     if axis <= 1 {
         output_shape = vec![input_first, total_elements];
     } else {
         let mut outer_dim = 1;
         let mut inner_dim = 1;
 
+        // Calcola le dimensioni esterne e interne del risultato in base all'asse di flattening.
         for (index, &dim) in input_shape.iter().enumerate() {
             if index < axis {
                 outer_dim *= dim as usize;
@@ -70,16 +43,17 @@ pub fn flatten(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, Onn
             }
         }
 
+        // Aggiungi le dimensioni calcolate al vettore della forma del risultato.
         output_shape.push(outer_dim);
         output_shape.push(inner_dim);
     }
 
-    // Reshape the input ndarray to the output shape.
+    // Ridimensiona il tensore di input utilizzando la forma calcolata.
     let result = input_nd_array.into_shape(output_shape).unwrap();
 
-    // For debugging: print the shape of the result.
+    // Stampa la forma del risultato a scopo di debug.
     println!("shape {:?}", result.shape());
 
-    // Convert the reshaped ndarray back to TensorProto and return.
+    // Converte il risultato in un TensorProto di output e restituisci.
     convert_to_output_tensor(node, result)
 }
