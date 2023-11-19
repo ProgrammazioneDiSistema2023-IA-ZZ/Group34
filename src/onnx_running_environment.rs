@@ -1,5 +1,8 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use image::flat::Error;
+
+use crate::OnnxError;
 use crate::onnx::{ModelProto, NodeProto};
 use crate::onnx::{self, TensorProto};
 use crate::utils::get_random_float_tensor;
@@ -114,30 +117,31 @@ unsafe impl Send for NodeIO {}
 
 unsafe impl Sync for NodeIO {}
 
-//fn find_and_do_operation(node_for_op:NodeProto,inputs: &Vec<&TensorProto>,initializers: Option<&Vec<&TensorProto>>,node: &NodeProto,){
-fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO){
-    //op type è una string che indica  l'operazione da fare serve copiare e incollare il match che avevo fatto in protoc
-    // gioele copialo e incollalo 
+fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO) -> Result<(),OnnxError>{
     let str_op=node_for_op.op_type.clone().as_str();
     println!("{}",node_for_op.op_type.clone());
+    
+    //Gli input vengono inseriti dal nodo precedente nel receiver
+    let recv = nodeio.optional_receiver.ok_or(OnnxError::InternalError("[RUN op] Receiver is None. It should be Some in order to execute the operation".to_string()))?;
+    let inputs = nodeio.optional_receiver.unwrap().recv().map_err(|error| OnnxError::MissingInput("[RUN op] The Sender where dropped before sending inputs".to_string()))?;
     // match --> redirect alle operazioni in operations
     match str_op {
-        "ADD" => add(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers.clone(),&nodeio.node.clone() ),
-        "RELU" => relu(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "EXP" => exp(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "CONCAT" => concat(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "FLATTEN" => flatten(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "RESHAPE" => reshape(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),//    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
-        "CONV" => conv(&nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
-        "MAXPOOL" => maxpool(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "BATCHNORM" => batch_norm(&nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
-        "DROPOUT" => dropout(&nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
-        "SOFTMAX" => softmax(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "GEMM" => gemm(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
-        "MATMUL" => matmul(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.initializers, &nodeio.node ),
-        "REDUCESUM" => reducesum(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
-        "GLOBALAVGPOOL" => globalavgpool(nodeio.optional_receiver.unwrap().recv().unwrap(), nodeio.node ),
-        "LRN" => lrn(&nodeio.optional_receiver.unwrap().recv().unwrap(), &nodeio.node ),
+        "ADD" => add(inputs, nodeio.initializers.clone(),&nodeio.node.clone() ),
+        "RELU" => relu(&inputs, &nodeio.node ),
+        "EXP" => exp(&inputs, &nodeio.node ),
+        "CONCAT" => concat(&inputs, &nodeio.node ),
+        "FLATTEN" => flatten(&inputs, &nodeio.node ),
+        "RESHAPE" => reshape(inputs, nodeio.initializers, &nodeio.node ),//    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
+        "CONV" => conv(&inputs, nodeio.initializers, &nodeio.node ),
+        "MAXPOOL" => maxpool(&inputs, &nodeio.node ),
+        "BATCHNORM" => batch_norm(&inputs, nodeio.initializers, &nodeio.node ),
+        "DROPOUT" => dropout(&inputs, nodeio.initializers, &nodeio.node ),
+        "SOFTMAX" => softmax(&inputs, &nodeio.node ),
+        "GEMM" => gemm(inputs, nodeio.initializers, &nodeio.node ),
+        "MATMUL" => matmul(inputs, nodeio.initializers, &nodeio.node ),
+        "REDUCESUM" => reducesum(&inputs, &nodeio.node ),
+        "GLOBALAVGPOOL" => globalavgpool(inputs, nodeio.node ),
+        "LRN" => lrn(&inputs, &nodeio.node ),
         _ => println!("Operazione sconosciuta"),
     }
 
