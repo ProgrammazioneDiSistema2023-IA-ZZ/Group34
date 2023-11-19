@@ -28,7 +28,7 @@ This utility file is open for enhancements. If there are additional ONNX operati
 //use crate::onnx_rustime::backend::helper::{make_tensor, Attribute, OnnxError, TensorValue};
 //use crate::onnx_rustime::backend::parser::{parse_raw_data_as_floats, parse_raw_data_as_ints64};
 use crate::{onnx::{
-    AttributeProto, GraphProto, NodeProto, TensorProto, attribute_proto::AttributeType,
+    AttributeProto, GraphProto, NodeProto, TensorProto, attribute_proto::AttributeType, tensor_proto::DataType
 }, OnnxError};
 use ndarray::*;
 use std::collections::HashMap;
@@ -55,12 +55,12 @@ macro_rules! set_tensor_data {
   ($proto: ident, $vals: ident $(| $type: ident $proto_type: ident $setter: ident)+) => {
       match $vals {
           TensorValue::Bool(vals) => {
-              $proto.set_int32_data(vals.into_iter().map(|v| if v { 1 } else { 0 }).collect());
-              $proto.set_data_type(TensorProto_DataType::BOOL as i32);
+              $proto.int32_data = vals.into_iter().map(|v| if v { 1 } else { 0 }).collect();
+              $proto.data_type = DataType::Bool as i32;
           }
           $(TensorValue::$type(vals) => {
-              $proto.$setter(vals.into_iter().map(Into::into).collect());
-              $proto.set_data_type(TensorProto_DataType::$proto_type as i32);
+              $proto.$setter = vals.into_iter().map(Into::into).collect();
+              $proto.data_type = DataType::$proto_type as i32;
           })+
       };
   }
@@ -826,17 +826,17 @@ pub fn make_tensor(
     tensor_proto.dims = dims;
     tensor_proto.name = name;
     set_tensor_data!(tensor_proto, vals
-        | Float   FLOAT   set_float_data
-        | UInt8   UINT8   set_int32_data
-        | Int8    INT8    set_int32_data
-        | UInt16  UINT16  set_int32_data
-        | Int16   INT16   set_int32_data
-        | Int32   INT32   set_int32_data
-        | String  STRING  set_string_data
-        | UInt32  UINT32  set_uint64_data
-        | UInt64   UINT64  set_uint64_data
-        | Int64   INT64   set_int64_data
-        | Double  DOUBLE  set_double_data
+        | Float   Float   float_data
+        | UInt8   Uint8   int32_data
+        | Int8    Int8    int32_data
+        | UInt16  Uint16  int32_data
+        | Int16   Int16   int32_data
+        | Int32   Int32   int32_data
+        | String  String  string_data
+        | UInt32  Uint32  uint64_data
+        | UInt64  Uint64  uint64_data
+        | Int64   Int64   int64_data
+        | Double  Double  double_data
         // | Bool    BOOL    set_int32_data // no from -> special-cased
     );
     tensor_proto
