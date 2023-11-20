@@ -382,15 +382,16 @@ fn determine_padding_and_input(
 /// let convoluted_output = conv(&input_tensor, &filter_tensors, &node);
 /// ```
 pub fn conv(
-    inputs: &TensorProto,
-    initializers: &Vec<TensorProto>,
+    inputs: Vec<TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
+    let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Extract the attributes from the node.
     let attributes = extract_attributes(&node.attribute)?;
 
     // Convert the input TensorProto to a ndarray.
-    let input_nd_array = tensor_proto_to_ndarray::<f32>(inputs)?;
+    let input_nd_array = tensor_proto_to_ndarray::<f32>(&inputs)?;
     let batch_size = input_nd_array.shape()[0];
 
     // Check if the input tensor has the expected 4D shape.

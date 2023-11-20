@@ -1,12 +1,17 @@
-use crate::{operations::utils::{
-    convert_to_output_tensor, extract_attributes, get_int_attribute, stack_along_batch_dimension,
-    tensor_proto_to_ndarray,
-}, onnx::{TensorProto, NodeProto}, OnnxError};
+use crate::{
+    onnx::{NodeProto, TensorProto},
+    operations::utils::{
+        convert_to_output_tensor, extract_attributes, get_int_attribute,
+        stack_along_batch_dimension, tensor_proto_to_ndarray,
+    },
+    OnnxError,
+};
 use ndarray::prelude::*;
 // Funzione pubblica per implementare l'operazione di riduzione somma in un grafo ONNX.
 
-pub fn reducesum(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
-    // Estrai gli attributi dal nodo ONNX.
+pub fn reducesum(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let input = input.get(0).unwrap(); //c'è solo un input
+                                       // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
 
     // Ottieni gli attributi specifici per la riduzione somma.

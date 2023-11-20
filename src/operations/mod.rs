@@ -23,7 +23,7 @@ pub use dropout::dropout;
 pub use exp::exp;
 pub use flatten::flatten;
 pub use gemm::gemm;
-pub use global_average_pool::global_average_pool;
+pub use global_average_pool::globalavgpool;
 pub use lrn::lrn;
 pub use matmul::matmul;
 pub use maxpool::maxpool;

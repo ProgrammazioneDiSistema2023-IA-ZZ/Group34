@@ -6,10 +6,11 @@ use rand::{Rng, SeedableRng};
 // Funzione pubblica per l'implementazione del dropout in un grafo ONNX.
 // Il dropout è una tecnica di regolarizzazione utilizzata durante l'addestramento dei modelli di apprendimento automatico.
 pub fn dropout(
-    input: &TensorProto,
-    initializers: &Vec<TensorProto>,
+    input: Vec<TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
+    let input = input.get(0).unwrap();//c'è solo un input
     // Converti il TensorProto di input in un ndarray di tipo f32.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(input).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())

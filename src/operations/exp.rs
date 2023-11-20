@@ -4,7 +4,8 @@ use crate::{operations::utils::{
 use ndarray::prelude::*;
 // Funzione pubblica per implementare l'operazione di esponenziale in un grafo ONNX.
 // L'operazione di esponenziale calcola l'esponenziale di ciascun elemento del tensore di input.
-pub fn exp(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn exp(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let input = input.get(0).unwrap();//c'è solo un input
     // Converti il TensorProto di input in un ndarray di tipo f32.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(input).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())

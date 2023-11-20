@@ -1,8 +1,8 @@
 use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
 pub fn add(
-    inputs: &Vec<&TensorProto>,
-    initializers: &Vec<TensorProto>,
+    inputs: Vec<TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Converti i tensori di input in ndarray

@@ -27,13 +27,16 @@ This utility file is open for enhancements. If there are additional ONNX operati
 
 //use crate::onnx_rustime::backend::helper::{make_tensor, Attribute, OnnxError, TensorValue};
 //use crate::onnx_rustime::backend::parser::{parse_raw_data_as_floats, parse_raw_data_as_ints64};
-use crate::{onnx::{
-    AttributeProto, GraphProto, NodeProto, TensorProto, attribute_proto::AttributeType, tensor_proto::DataType
-}, OnnxError};
+use crate::onnx::attribute_proto;
+use crate::{
+    onnx::{
+        attribute_proto::AttributeType, tensor_proto::DataType, AttributeProto, GraphProto,
+        NodeProto, TensorProto,
+    },
+    OnnxError,
+};
 use ndarray::*;
 use std::collections::HashMap;
-use crate::onnx::attribute_proto;
-
 
 #[allow(dead_code)]
 pub enum TensorValue {
@@ -65,7 +68,6 @@ macro_rules! set_tensor_data {
       };
   }
 }
-
 
 pub trait TensorType {
     /// Represents the specific type of data the tensor holds.
@@ -241,7 +243,11 @@ pub fn ndarray_to_tensor_proto<T: TensorType>(
     let tensor_data = T::to_tensor_data(result);
 
     // Construct the TensorProto.
-    Ok(make_tensor(output_name.to_string(), tensor_dims, tensor_data))
+    Ok(make_tensor(
+        output_name.to_string(),
+        tensor_dims,
+        tensor_data,
+    ))
 }
 
 /// Converts the result into a `TensorProto` using the output name from the given node.
@@ -364,10 +370,18 @@ pub fn extract_attributes(
                     )
                 })?)
             }
-            x if x == attribute_proto::AttributeType::Tensor as i32 => Attribute::Tensor(attr.t.unwrap().clone()),
-            x if x == attribute_proto::AttributeType::Graph as i32 => Attribute::Graph(attr.g.unwrap().clone()),
-            x if x == attribute_proto::AttributeType::Floats as i32 => Attribute::Floats(attr.floats),
-            x if x == attribute_proto::AttributeType::Ints as i32 => Attribute::Ints(attr.ints),
+            x if x == attribute_proto::AttributeType::Tensor as i32 => {
+                Attribute::Tensor(attr.t.clone().unwrap().clone())
+            }
+            x if x == attribute_proto::AttributeType::Graph as i32 => {
+                Attribute::Graph(attr.g.clone().unwrap().clone())
+            }
+            x if x == attribute_proto::AttributeType::Floats as i32 => {
+                Attribute::Floats(attr.floats.clone())
+            }
+            x if x == attribute_proto::AttributeType::Ints as i32 => {
+                Attribute::Ints(attr.ints.clone())
+            }
             x if x == attribute_proto::AttributeType::Strings as i32 => Attribute::Strings(
                 attr.strings
                     .iter()
@@ -380,9 +394,7 @@ pub fn extract_attributes(
                     })
                     .collect::<Result<Vec<_>, _>>()?,
             ),
-            x if x == AttributeType::Tensor as i32 => {
-                Attribute::Tensors(attr.tensors.to_vec())
-            }
+            x if x == AttributeType::Tensor as i32 => Attribute::Tensors(attr.tensors.to_vec()),
             x if x == AttributeType::Graphs as i32 => Attribute::Graphs(attr.graphs.to_vec()),
             _ => {
                 return Err(OnnxError::UnsupportedOperation(
@@ -817,11 +829,7 @@ pub fn parse_raw_data_as_ints64(raw_data: &[u8]) -> Vec<i64> {
 
     ints64
 }
-pub fn make_tensor(
-    name: String,
-    dims: Vec<i64>,
-    vals: TensorValue,
-) -> TensorProto {
+pub fn make_tensor(name: String, dims: Vec<i64>, vals: TensorValue) -> TensorProto {
     let mut tensor_proto = TensorProto::new();
     tensor_proto.dims = dims;
     tensor_proto.name = name;
@@ -938,11 +946,36 @@ impl<S: std::fmt::Display> Attribute<S> {
     }
 }
 
+impl AttributeProto {
+    fn new() -> Self {
+        Self {
+            name: "".to_string(),
+            ref_attr_name: "".to_string(),
+            doc_string: "".to_string(),
+            r#type: -1,
+            f: 0.0,
+            i: 0,
+            s: Vec::new(),
+            t: None,
+            g: None,
+            sparse_tensor: None,
+            tp: None,
+            floats: Vec::new(),
+            ints: Vec::new(),
+            strings: Vec::new(),
+            tensors: Vec::new(),
+            graphs: Vec::new(),
+            sparse_tensors: Vec::new(),
+            type_protos: Vec::new(),
+        }
+    }
+}
+
 pub fn make_attribute<S: Into<String>, U: Into<Vec<u8>>>(
     name: S,
     attribute: Attribute<U>,
 ) -> AttributeProto {
-    let mut attr_proto : AttributeProto;
+    let mut attr_proto: AttributeProto::new();
     attr_proto.name = name.into();
     match attribute {
         Attribute::Float(val) => {
@@ -988,4 +1021,3 @@ pub fn make_attribute<S: Into<String>, U: Into<Vec<u8>>>(
     }
     attr_proto
 }
-

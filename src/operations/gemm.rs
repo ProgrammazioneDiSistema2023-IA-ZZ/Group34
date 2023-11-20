@@ -1,8 +1,13 @@
-use crate::{operations::utils::{
-    convert_to_output_tensor, extract_attributes, get_float_attribute, get_int_attribute,
-    tensor_proto_to_ndarray,
-}, onnx::{TensorProto, NodeProto}, OnnxError};
+use crate::{
+    onnx::{NodeProto, TensorProto},
+    operations::utils::{
+        convert_to_output_tensor, extract_attributes, get_float_attribute, get_int_attribute,
+        tensor_proto_to_ndarray,
+    },
+    OnnxError,
+};
 use ndarray::prelude::*;
+use tract_onnx::tract_core::tract_data::itertools::Itertools;
 //use rayon::prelude::*;
 
 pub enum OperationMode {
@@ -13,8 +18,8 @@ pub enum OperationMode {
 // Funzione pubblica per implementare l'operazione di moltiplicazione di matrici o gemm in un grafo ONNX.
 
 pub fn gemm(
-    inputs: &Vec<&TensorProto>,
-    initializers: Option<&Vec<&TensorProto>>,
+    inputs: Vec<TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Estrai gli attributi dal nodo ONNX.
@@ -30,14 +35,20 @@ pub fn gemm(
     let trans_b: i64 = get_int_attribute(&attributes, "transB", Some(0))?;
 
     // Unisci i TensorProto di input e i TensorProto inizializzatori.
-    let mut merged_tensors: Vec<&TensorProto> = inputs.clone();
-    if let Some(params) = initializers {
-        merged_tensors.extend(params);
-    }
+    let mut merged_tensors: Vec<TensorProto> = inputs.clone();
+    merged_tensors.extend(initializers);
 
     // Converti i TensorProto A e B in ndarray di tipo f32.
-    let mut a = tensor_proto_to_ndarray::<f32>(get_tensor(&merged_tensors, 0, "A")?)?;
-    let mut b = tensor_proto_to_ndarray::<f32>(get_tensor(&merged_tensors, 1, "B")?)?;
+    let mut a = tensor_proto_to_ndarray::<f32>(get_tensor(
+        &merged_tensors.iter().collect_vec(),
+        0,
+        "A",
+    )?)?;
+    let mut b = tensor_proto_to_ndarray::<f32>(get_tensor(
+        &merged_tensors.iter().collect_vec(),
+        1,
+        "B",
+    )?)?;
 
     // Trasponi le matrici A e B se richiesto dagli attributi transA e transB.
     if trans_a == 1 {
@@ -140,7 +151,6 @@ fn matrix_multiply_batched(
 
     Some(result.into_dyn())
 }
-
 
 fn matrix_multiply_single(a: &ArrayD<f32>, b_matrix: &ndarray::Array2<f32>) -> Option<ArrayD<f32>> {
     let a_2d = a.to_owned().into_dimensionality::<ndarray::Ix2>().unwrap();

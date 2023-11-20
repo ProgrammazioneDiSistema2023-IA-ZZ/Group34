@@ -5,7 +5,8 @@ use crate::{operations::utils::{
 use ndarray::prelude::*;
 // Funzione pubblica per implementare l'operazione di max pooling in un grafo ONNX.
 
-pub fn maxpool(inputs: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
 
@@ -20,7 +21,7 @@ pub fn maxpool(inputs: &TensorProto, node: &NodeProto) -> Result<TensorProto, On
     let _dilations = get_ints_attribute(&attributes, "dilations", Some(vec![1, 1]))?;
 
     // Converti TensorProto in ndarray.
-    let inputs_nd_array = tensor_proto_to_ndarray::<f32>(inputs)?;
+    let inputs_nd_array = tensor_proto_to_ndarray::<f32>(&inputs)?;
 
     // Calcola il risultato del max pooling.
     let result = pool(&inputs_nd_array, &kernel_shape, &pads, &strides)?;

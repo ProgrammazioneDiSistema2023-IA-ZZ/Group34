@@ -2,9 +2,10 @@ use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarra
 // Funzione pubblica per implementare l'operazione di flattening in un grafo ONNX.
 // L'operazione di flattening ridimensiona il tensore di input a una forma lineare (1D).
 
-pub fn flatten(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn flatten(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let input = input.get(0).unwrap();//c'è solo un input
     // Ottieni le dimensioni del tensore di input.
-    let input_shape = input.dims;
+    let input_shape = &input.dims;
     let input_first = input_shape[0] as usize;
 
     // Converti il TensorProto di input in un ndarray di tipo f32.

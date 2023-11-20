@@ -61,7 +61,7 @@ fn reshape_with_batches(
     // Determina il tensore di forma.
     let shape_tensor = parameter;
 
-    let mut target_shape: Vec<isize> = tensor_proto_to_ndarray::<i64>(shape_tensor)?
+    let mut target_shape: Vec<isize> = tensor_proto_to_ndarray::<i64>(&shape_tensor)?
         .into_raw_vec()
         .iter()
         .map(|&x| x as isize)
@@ -79,15 +79,15 @@ fn reshape_with_batches(
 // Funzione privata per la riduzione di un tensore senza operazioni batch.
 
 fn reshape_without_batches(
-    initializers: &Vec<&TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Estrai attributi specifici del nodo.
     let attributes = extract_attributes(&node.attribute)?;
     let allow_zero: i64 = get_int_attribute(&attributes, "allow_zero", Some(0))?;
 
-    let input_nd_array = tensor_proto_to_ndarray::<f32>(initializers[0])?;
-    let target_shape: Vec<isize> = tensor_proto_to_ndarray::<i64>(initializers[1])?
+    let input_nd_array = tensor_proto_to_ndarray::<f32>(&initializers[0])?;
+    let target_shape: Vec<isize> = tensor_proto_to_ndarray::<i64>(&initializers[1])?
         .into_raw_vec()
         .iter()
         .map(|&x| x as isize)
@@ -111,13 +111,13 @@ fn reshape_without_batches(
 // Si noti che specificare una forma che include sia uno 0 che un valore di -1 è invalido quando l'attributo
 // `allowzero` è attivato.
 pub fn reshape(
-    inputs: Vec<&TensorProto>,
-    initializers: &Vec<&TensorProto>,
+    inputs: Vec<TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     if initializers.len() == 2 {
         reshape_without_batches(initializers, node)
     } else {
-        reshape_with_batches(inputs.get(0).unwrap(), initializers[0], node)
+        reshape_with_batches(&inputs[0], &initializers[0], node)
     }
 }

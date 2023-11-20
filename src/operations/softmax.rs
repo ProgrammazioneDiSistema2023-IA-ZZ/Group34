@@ -1,22 +1,22 @@
-use crate::OnnxError;
-use crate::onnx::{TensorProto, NodeProto};
+use crate::onnx::{NodeProto, TensorProto};
 use crate::operations::exp::exp;
 use crate::operations::reducesum::reducesum;
 use crate::operations::utils::{
     convert_to_output_tensor, stack_along_batch_dimension, tensor_proto_to_ndarray,
 };
+use crate::OnnxError;
 use ndarray::prelude::*;
-pub fn softmax(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn softmax(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
     // Calcola l'esponenziale di ciascun elemento del tensore di input.
-    let exp_nd_array = tensor_proto_to_ndarray::<f32>(&exp(input, node)?).map_err(|_| {
+    let exp_nd_array = tensor_proto_to_ndarray::<f32>(&exp(input.clone(), node)?).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
     })?;
 
     // Calcola la somma degli elementi esponenziali.
-    let reduce_nd_array = tensor_proto_to_ndarray::<f32>(&reducesum(&exp(input, node)?, node)?)
-        .map_err(|_| {
-            OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
-        })?;
+    let reduce_nd_array =
+        tensor_proto_to_ndarray::<f32>(&reducesum(vec![exp(input, node)?], node)?).map_err(
+            |_| OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into()),
+        )?;
 
     // Ottieni la dimensione del batch.
     let batch_size = exp_nd_array.shape()[0];

@@ -3,7 +3,8 @@ use ndarray::ArrayD;
 
 use super::utils::convert_to_output_tensor;
 
-pub fn relu(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn relu(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let input = input.get(0).unwrap();//c'è solo un input
     // Converti TensorProto in ndarray.
     let input_nd_array = tensor_proto_to_ndarray::<f32>(input).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())

@@ -1,24 +1,28 @@
-
-use crate::{operations::utils::{
-    convert_to_output_tensor, extract_attributes, get_float_attribute, stack_along_batch_dimension,
-    tensor_proto_to_ndarray,
-}, onnx::{TensorProto, NodeProto}, OnnxError};
+use crate::{
+    onnx::{NodeProto, TensorProto},
+    operations::utils::{
+        convert_to_output_tensor, extract_attributes, get_float_attribute,
+        stack_along_batch_dimension, tensor_proto_to_ndarray,
+    },
+    OnnxError,
+};
 use ndarray::prelude::*;
 pub fn batch_norm(
-    input: &TensorProto,
-    initializers: Vec<&TensorProto>,
+    input: Vec<TensorProto>,
+    initializers: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
-    // Estrai gli attributi del nodo.
+    let input = input.get(0).unwrap(); //c'è solo un input
+                                       // Estrai gli attributi del nodo.
     let attributes = extract_attributes(&node.attribute)?;
     let epsilon = get_float_attribute(&attributes, "epsilon", Some(1e-05))?;
 
     // Converti TensorProto in ndarrays.
     let x = tensor_proto_to_ndarray::<f32>(input)?;
-    let scale = tensor_proto_to_ndarray::<f32>(initializers[0])?;
-    let bias = tensor_proto_to_ndarray::<f32>(initializers[1])?;
-    let mean = tensor_proto_to_ndarray::<f32>(initializers[2])?;
-    let var = tensor_proto_to_ndarray::<f32>(initializers[3])?;
+    let scale = tensor_proto_to_ndarray::<f32>(&initializers[0])?;
+    let bias = tensor_proto_to_ndarray::<f32>(&initializers[1])?;
+    let mean = tensor_proto_to_ndarray::<f32>(&initializers[2])?;
+    let var = tensor_proto_to_ndarray::<f32>(&initializers[3])?;
 
     let batch_size = x.shape()[0];
 

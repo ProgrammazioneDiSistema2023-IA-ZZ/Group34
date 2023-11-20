@@ -5,7 +5,8 @@ use crate::{operations::utils::{
 use ndarray::prelude::*;
 // Funzione pubblica per implementare l'operazione di "Local Response Normalization" (LRN) in un grafo ONNX.
 
-pub fn lrn(input: &TensorProto, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn lrn(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+    let input = input.get(0).unwrap();//c'è solo un input
     // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
     let alpha: f32 = get_float_attribute(&attributes, "alpha", Some(0.0001))?;

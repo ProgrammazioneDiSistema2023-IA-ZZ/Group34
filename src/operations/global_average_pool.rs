@@ -5,10 +5,11 @@ use crate::{operations::utils::{
 use ndarray::prelude::*;
 // Funzione pubblica per implementare l'operazione di "global average pooling" in un grafo ONNX.
 
-pub fn global_average_pool(
-    inputs: &TensorProto,
+pub fn globalavgpool(
+    inputs: Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
+    let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Estrai gli attributi dal nodo ONNX (non utilizzati in questa funzione, ma potrebbero servire per estensioni future).
     let _attributes = extract_attributes(&node.attribute)?;
 
