@@ -15,5 +15,6 @@ pub fn get_random_float_tensor(dims: Vec<i64>) -> TensorProto{
     tensor_proto.dims=dims.clone(); // Adjust the data type as needed
     tensor_proto.data_type = DataType::Float as i32;
     tensor_proto.float_data = data.to_vec();
+    tensor_proto.name = String::from("data");
     tensor_proto
 }

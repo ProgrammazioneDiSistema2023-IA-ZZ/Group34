@@ -1,6 +1,7 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use image::flat::Error;
+use tract_onnx::prelude::tract_itertools::Itertools;
 use crate::OnnxError;
 use crate::onnx::{self, GraphProto, ModelProto, NodeProto, TensorProto};
 use crate::utils::get_random_float_tensor;
@@ -70,7 +71,7 @@ impl OnnxRunningEnvironment {
             node_io_vec.push(new_node_io);
         }
         Self {
-            input_tensor: get_random_float_tensor(vec![1, 3, 224, 224]),
+            input_tensor: get_random_float_tensor(vec![1, 3, 224, 224]), //TODO sostituire con l'effettivo tensore in input
             input_senders,
             output_receiver: output_receiver.unwrap(),
             model,
@@ -80,7 +81,7 @@ impl OnnxRunningEnvironment {
     pub fn run(&self) {
         //Invio il tensore di input della rete sui sender di input
         self.input_senders.iter().for_each(|first_sender| {
-            println!("Start running using a random tensor of dims: {:?}", self.input_tensor.dims);
+            println!("Start running using a random tensor of dims: {:?} and name: {:?}", self.input_tensor.dims, self.input_tensor.name);
             first_sender.send(self.input_tensor.clone()).expect("Send of the input tensor failed!");
         });
 
@@ -89,9 +90,12 @@ impl OnnxRunningEnvironment {
                 s.spawn(|| {
                     let NodeIO { senders, optional_receiver, node, initializers } = current_node;
                     if let Some(receiver) = optional_receiver {
-                        let input_data = receiver.recv().unwrap();
-                        //TODO Perform operations use input_data + initializers
-                        let output_data = input_data;
+                        let inputs = get_inputs(receiver, node, initializers);
+
+                        //TODO To perform operations use inputs + initializers, note that if inputs has only one number you need to extract it from to Vec before giving it to the operation function
+                        let mut output_data = inputs.first().unwrap().clone(); //replace the right end side with the operation call
+
+                        output_data.name = String::from(node.clone().output.first().unwrap());
                         for sender in senders.iter() {
                             sender.send(output_data.clone()).expect("TODO: panic message");
                         }
@@ -100,8 +104,39 @@ impl OnnxRunningEnvironment {
             }
         });
         let result = self.output_receiver.recv();
-        println!("The final result is a tensor of dims: {:?}", result.unwrap().dims)
+        println!("The final result is a tensor of dims: {:?} and name {:?}", result.clone().unwrap().dims, result.unwrap().name)
     }
+}
+
+pub fn get_inputs(receiver: &Receiver<TensorProto>, node: &NodeProto, initializers: &Vec<TensorProto>) -> Vec<TensorProto>{
+    let mut input = receiver.recv().unwrap();
+    let inputs_and_initializers_to_read_names = node.input.clone();
+    let initializers_names: Vec<String> = initializers.iter().map(|i|i.name.clone()).collect();
+    let mut inputs_names = vec!(input.clone().name);
+    let mut inputs = vec!(input.clone());
+    while !is_input_reading_finished(inputs_and_initializers_to_read_names.clone(), initializers_names.clone(), inputs_names.clone()) {
+        input = receiver.recv().unwrap();
+        inputs_names.push(input.name.clone());
+        inputs.push(input.clone())
+    }
+    inputs
+}
+
+pub fn is_input_reading_finished(inputs_and_initializers_to_read_names: Vec<String>, initializers_names: Vec<String>, inputs_names: Vec<String>) -> bool{
+    let mut elements_found = 0;
+    inputs_names.iter().for_each(|input_name|{
+        if let Some(n) = inputs_and_initializers_to_read_names.iter().find(|i|i==&input_name){
+            println!("N1 {:?}", n);
+            elements_found+=1;
+        }
+    });
+    initializers_names.iter().for_each(|initializer_names|{
+        if let Some(n) = inputs_and_initializers_to_read_names.iter().find(|i|i==&initializer_names){
+            println!("N2 {:?}", n);
+            elements_found+=1;
+        }
+    });
+    inputs_and_initializers_to_read_names.len() == elements_found
 }
 
 pub fn get_initializers(graph: GraphProto, node: NodeProto) -> Vec<TensorProto> {
@@ -109,7 +144,6 @@ pub fn get_initializers(graph: GraphProto, node: NodeProto) -> Vec<TensorProto> 
     if node.input.len() > 1 {
         let inits_from_graph = graph.initializer;
         let requested_inits_names: Vec<String> = node.clone().input.drain(1..).collect();
-        println!("{:?}", requested_inits_names);
         requested_inits_names.iter().for_each(|requested_init_name| {
             for init in inits_from_graph.iter() {
                 if init.name == requested_init_name.to_owned() {
