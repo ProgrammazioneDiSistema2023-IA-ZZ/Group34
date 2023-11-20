@@ -2,7 +2,7 @@ use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,}, onnx::{NodeProto, TensorProto}, OnnxError};
 use ndarray::*;
 
-pub fn concat(inputs: &Vec<&TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn concat(inputs: &Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
     // Estrai gli attributi del nodo.
     let attributes = extract_attributes(&node.attribute)?;
     let axis = get_int_attribute(&attributes, "axis", None)? as usize;

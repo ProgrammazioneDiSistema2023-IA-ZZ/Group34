@@ -6,7 +6,7 @@ use crate::{operations::utils::{
 use ndarray::prelude::*;
 pub fn batch_norm(
     input: &TensorProto,
-    initializers: &Vec<&TensorProto>,
+    initializers: Vec<&TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Estrai gli attributi del nodo.

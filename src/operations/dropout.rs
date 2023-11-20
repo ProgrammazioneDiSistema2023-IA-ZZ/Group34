@@ -7,7 +7,7 @@ use rand::{Rng, SeedableRng};
 // Il dropout è una tecnica di regolarizzazione utilizzata durante l'addestramento dei modelli di apprendimento automatico.
 pub fn dropout(
     input: &TensorProto,
-    initializers: Option<&Vec<&TensorProto>>,
+    initializers: &Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Converti il TensorProto di input in un ndarray di tipo f32.
@@ -17,7 +17,7 @@ pub fn dropout(
 
     // Estrai il tasso di dropout e la modalità di addestramento dagli initializers o imposta i valori predefiniti.
     let (ratio, training_mode) = match initializers {
-        Some(tensor_protos) => {
+        tensor_protos => {
             let ratio = tensor_protos
                 .get(0)
                 .and_then(|tp| tp.float_data.get(0))
@@ -31,7 +31,7 @@ pub fn dropout(
 
             (ratio, training_mode)
         }
-        None => (0.5, 0),
+        _ => (0.5, 0),
     };
 
     // Se la modalità di addestramento è 0, restituisci direttamente il risultato senza dropout.

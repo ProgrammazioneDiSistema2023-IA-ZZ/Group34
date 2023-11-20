@@ -2,7 +2,7 @@ use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarra
 use ndarray::prelude::*;
 pub fn add(
     inputs: &Vec<&TensorProto>,
-    initializers: Option<&Vec<&TensorProto>>,
+    initializers: &Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Converti i tensori di input in ndarray
@@ -19,7 +19,7 @@ pub fn add(
     let mut merged_tensors = Vec::new();
     merged_tensors.extend(inputs_nd_array);
 
-    if let Some(param_tensors) = initializers {
+    if let param_tensors = initializers {
         let initializers_nd_array = param_tensors
             .iter()
             .map(|x| {

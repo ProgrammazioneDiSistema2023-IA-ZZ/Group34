@@ -167,7 +167,7 @@ unsafe impl Send for NodeIO {}
 
 unsafe impl Sync for NodeIO {}
 
-fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO) -> Result<(),OnnxError>{
+fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO) -> Result<TensorProto,OnnxError>{
     let str_op=node_for_op.op_type.clone().as_str();
     println!("{}",node_for_op.op_type.clone());
     
@@ -176,16 +176,16 @@ fn find_and_do_operation(node_for_op:NodeProto,nodeio:NodeIO) -> Result<(),OnnxE
     let inputs = nodeio.optional_receiver.unwrap().recv().map_err(|error| OnnxError::MissingInput("[RUN op] The Sender where dropped before sending inputs".to_string()))?;
     // match --> redirect alle operazioni in operations
     match str_op {
-        "ADD" => add(inputs, nodeio.initializers.clone(),&nodeio.node.clone() ),
+        "ADD" => add(&inputs, &nodeio.initializers,&nodeio.node),
         "RELU" => relu(&inputs, &nodeio.node ),
         "EXP" => exp(&inputs, &nodeio.node ),
-        "CONCAT" => concat(&inputs, &nodeio.node ),
+        "CONCAT" => concat(&inputs, &nodeio.node ),// use initializers ?
         "FLATTEN" => flatten(&inputs, &nodeio.node ),
-        "RESHAPE" => reshape(inputs, nodeio.initializers, &nodeio.node ),//    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
-        "CONV" => conv(&inputs, nodeio.initializers, &nodeio.node ),
+        "RESHAPE" => reshape(inputs, &nodeio.initializers, &nodeio.node ),//    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
+        "CONV" => conv(&inputs, &nodeio.initializers, &nodeio.node ),
         "MAXPOOL" => maxpool(&inputs, &nodeio.node ),
-        "BATCHNORM" => batch_norm(&inputs, nodeio.initializers, &nodeio.node ),
-        "DROPOUT" => dropout(&inputs, nodeio.initializers, &nodeio.node ),
+        "BATCHNORM" => batch_norm(&inputs, &nodeio.initializers, &nodeio.node ),
+        "DROPOUT" => dropout(&inputs, &nodeio.initializers, &nodeio.node ),
         "SOFTMAX" => softmax(&inputs, &nodeio.node ),
         "GEMM" => gemm(inputs, nodeio.initializers, &nodeio.node ),
         "MATMUL" => matmul(inputs, nodeio.initializers, &nodeio.node ),

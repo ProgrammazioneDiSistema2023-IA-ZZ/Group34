@@ -383,7 +383,7 @@ fn determine_padding_and_input(
 /// ```
 pub fn conv(
     inputs: &TensorProto,
-    initializers: &Vec<&TensorProto>,
+    initializers: &Vec<TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     // Extract the attributes from the node.
@@ -400,7 +400,7 @@ pub fn conv(
 
     // Get the auto_pad attribute and create the kernel array.
     let auto_pad = get_string_attribute(&attributes, "auto_pad", Some("NOT_SET".to_string()))?;
-    let kernel = tensor_proto_to_ndarray::<f32>(initializers[0])?
+    let kernel = tensor_proto_to_ndarray::<f32>(&initializers[0])?
         .into_shape((
             initializers[0].dims[0] as usize,
             initializers[0].dims[1] as usize,

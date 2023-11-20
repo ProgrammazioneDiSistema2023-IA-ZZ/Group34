@@ -111,13 +111,13 @@ fn reshape_without_batches(
 // Si noti che specificare una forma che include sia uno 0 che un valore di -1 è invalido quando l'attributo
 // `allowzero` è attivato.
 pub fn reshape(
-    inputs: Option<&TensorProto>,
+    inputs: Vec<&TensorProto>,
     initializers: &Vec<&TensorProto>,
     node: &NodeProto,
 ) -> Result<TensorProto, OnnxError> {
     if initializers.len() == 2 {
         reshape_without_batches(initializers, node)
     } else {
-        reshape_with_batches(inputs.unwrap(), initializers[0], node)
+        reshape_with_batches(inputs.get(0).unwrap(), initializers[0], node)
     }
 }
