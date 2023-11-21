@@ -153,10 +153,20 @@ fn main() {
         exit(1)
     }
     let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
-    let parsed_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+    let model_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+
+    println!("Reading the inputs ...");
+    let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
+    let input_tensor: TensorProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+
     println!("starting Network...");
-    let new_env = OnnxRunningEnvironment::new(parsed_proto);
-    new_env.run();
+    let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
+    let pred_out = new_env.run();//predicted output
+
+    let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
+    let output_tensor: TensorProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+
+
 }
 
 fn read_input(input: &str) {
