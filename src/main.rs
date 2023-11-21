@@ -30,6 +30,7 @@ mod operations;
 fn main() {
     let mut path_model: &str = "";
     let mut path_testset: &str = "";
+    let mut path_output: &str = "";
     loop {
         println!("Onnx runtime");
         println!("scegli una rete:");
@@ -60,6 +61,7 @@ fn main() {
                     match choice2 {
                         "s" => {
                             path_testset = &mobilenet_load_testset();
+                            path_output = &mobilenet_load_output();
                             break;
                         }
                         "n" => {
@@ -83,6 +85,7 @@ fn main() {
                     match choice2 {
                         "s" => {
                             path_testset = &resnet_load_testset();
+                            path_output =&resnet_load_output();
                             break;
                         }
                         "n" => {
@@ -106,6 +109,7 @@ fn main() {
                     match choice2 {
                         "s" => {
                             path_testset = &squeezenet_load_testset();
+                            path_output=&squeezenet_load_output();
                             break;
                         }
                         "n" => {
@@ -129,6 +133,7 @@ fn main() {
                     match choice2 {
                         "s" => {
                             path_testset = &googlenet_load_testset();
+                            path_output=&googlenet_load_output();
                             break;
                         }
                         "n" => {
@@ -190,6 +195,11 @@ fn mobilenet_load() -> &'static str {
     return path_model;
 }
 
+fn mobilenet_load_output() -> &'static str {
+    let path_output = "src/mobilenet/data_mobilenet/output_0.pb";
+    return path_output;
+}
+
 fn googlenet_load_testset() -> &'static str {
     let path_testset = "src/googlenet/data_googlenet/input_0.pb";
     return path_testset;
@@ -199,7 +209,10 @@ fn googlenet_load() -> &'static str {
     let path_model = "src/googlenet/model.onnx";
     return path_model;
 }
-
+fn googlenet_load_output() -> &'static str {
+    let path_output = "src/googlenet/data_googlenet/output_0.pb";
+    return path_output;
+}
 fn resnet_load_testset() -> &'static str {
     let path_testset = "src/resnet/data_resnet/input_0.pb";
     return path_testset;
@@ -208,6 +221,11 @@ fn resnet_load_testset() -> &'static str {
 fn resnet_load() -> &'static str {
     let path_model = "src/resnet/model.onnx";
     return path_model;
+}
+
+fn resnet_load_output() -> &'static str {
+    let path_output = "src/resnet/data_resnet/output_0.pb";
+    return path_output;
 }
 
 fn squeezenet_load_testset() -> &'static str {
@@ -220,6 +238,10 @@ fn squeezenet_load() -> &'static str {
     return path_model;
 }
 
+fn squeezenet_load_output() -> &'static str {
+    let path_output = "src/squeezenet/data_squeezenet/output_0.pb";
+    return path_output;
+}
 struct Operation {
     op_type: OperationType,
     input: Vec<TensorProto>,
