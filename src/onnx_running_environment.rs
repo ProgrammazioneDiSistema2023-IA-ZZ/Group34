@@ -237,7 +237,7 @@ fn find_and_do_operation(
         "GEMM" => gemm(inputs, initializers, node_for_op),
         "MATMUL" => matmul(inputs, initializers, node_for_op),
         "REDUCESUM" => reducesum(inputs, node_for_op),
-        "GLOBALAVERAGEPOOL" => globalavgpool(inputs, node_for_op),
+        "AVERAGEPOOL" => globalavgpool(inputs, node_for_op),
         "LRN" => lrn(inputs, node_for_op),
         _ => Err(OnnxError::UnsupportedOperation("Operazione non supportata".to_string())),
     }
