@@ -20,6 +20,7 @@ use crate::OnnxError;
 use image::flat::Error;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use std::time::Instant;
 use tract_onnx::prelude::tract_itertools::Itertools;
 pub struct OnnxRunningEnvironment {
     input_tensor: TensorProto,
@@ -30,7 +31,7 @@ pub struct OnnxRunningEnvironment {
 }
 
 impl OnnxRunningEnvironment {
-    pub fn new(model: ModelProto) -> Self {
+    pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
         let graph = model.clone().graph.unwrap();
         //println!("{?}",graph.unwrap());
@@ -76,18 +77,19 @@ impl OnnxRunningEnvironment {
             node_io_vec.push(new_node_io);
         }
         Self {
-            input_tensor: get_random_float_tensor(vec![1, 3, 224, 224]), //TODO sostituire con l'effettivo tensore in input
+            input_tensor,
             input_senders,
             output_receiver: output_receiver.unwrap(),
             model,
             node_io_vec,
         }
     }
-    pub fn run(&self) {
+    pub fn run(&self) -> TensorProto {
+        let start = Instant::now();
         //Invio il tensore di input della rete sui sender di input
         self.input_senders.iter().for_each(|first_sender| {
             println!(
-                "Start running using a random tensor of dims: {:?} and name: {:?}",
+                "Start running using a tensor of dims: {:?} and name: {:?}",
                 self.input_tensor.dims, self.input_tensor.name
             );
             first_sender
@@ -124,14 +126,19 @@ impl OnnxRunningEnvironment {
                 });
             }
         });
-        let result = self.output_receiver.recv();
+        let result = self.output_receiver.recv().unwrap();
+
+        let duration = start.elapsed();
+        println!("\nRun ended - elapsed: {:?}", duration);
         println!(
             "The final result is a tensor of dims: {:?} and name {:?}",
-            result.clone().unwrap().dims,
-            result.unwrap().name
-        )
+            result.dims,
+            result.name
+        );
+        result
     }
 }
+
 
 pub fn get_inputs(
     receiver: &Receiver<TensorProto>,
