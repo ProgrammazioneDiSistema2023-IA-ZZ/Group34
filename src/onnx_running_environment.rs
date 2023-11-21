@@ -106,16 +106,19 @@ impl OnnxRunningEnvironment {
                     } = current_node;
                     if let Some(receiver) = optional_receiver {
                         let inputs = get_inputs(receiver, node, initializers);
-
-                        //TODO To perform operations use inputs + initializers, note that if inputs has only one number you need to extract it from to Vec before giving it to the operation function
-                        find_and_do_operation(node, initializers.clone(), inputs.clone());
-                        let mut output_data = inputs.first().unwrap().clone(); //replace the right end side with the operation call
-
-                        output_data.name = String::from(node.clone().output.first().unwrap());
-                        for sender in senders.iter() {
-                            sender
-                                .send(output_data.clone())
-                                .expect("TODO: panic message");
+                        let mut output_result = find_and_do_operation(node, initializers.clone(), inputs.clone());
+                        match output_result {
+                            Ok(mut output_data) => {
+                                output_data.name = String::from(node.clone().output.first().unwrap());
+                                for sender in senders.iter() {
+                                    sender
+                                        .send(output_data.clone())
+                                        .expect("TODO: panic message");
+                                }
+                            }
+                            Err(e) => {
+                                println!("Error: {:?}", e)
+                            }
                         }
                     }
                 });
@@ -163,7 +166,6 @@ pub fn is_input_reading_finished(
             .iter()
             .find(|i| i == &input_name)
         {
-            println!("N1 {:?}", n);
             elements_found += 1;
         }
     });
@@ -172,7 +174,6 @@ pub fn is_input_reading_finished(
             .iter()
             .find(|i| i == &initializer_names)
         {
-            println!("N2 {:?}", n);
             elements_found += 1;
         }
     });
@@ -214,14 +215,14 @@ fn find_and_do_operation(
     initializers: Vec<TensorProto>,
     inputs: Vec<TensorProto>,
 ) -> Result<TensorProto, OnnxError> {
-    let str_op = node_for_op.op_type.as_str();
-    println!("{}", node_for_op.op_type);
+    let str_op = node_for_op.op_type.to_uppercase();
+    println!("{}", str_op);
 
     // //Gli input vengono inseriti dal nodo precedente nel receiver
     // let recv = nodeio.optional_receiver.ok_or(OnnxError::InternalError("[RUN op] Receiver is None. It should be Some in order to execute the operation".to_string()))?;
     // let inputs = nodeio.optional_receiver.unwrap().recv().map_err(|error| OnnxError::MissingInput("[RUN op] The Sender where dropped before sending inputs".to_string()))?;
     // // match --> redirect alle operazioni in operations
-    match str_op {
+    match str_op.as_str() {
         "ADD" => add(inputs, initializers, node_for_op),
         "RELU" => relu(inputs, node_for_op),
         "EXP" => exp(inputs, node_for_op),
@@ -230,13 +231,13 @@ fn find_and_do_operation(
         "RESHAPE" => reshape(inputs, initializers, node_for_op), //    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
         "CONV" => conv(inputs, initializers, node_for_op),
         "MAXPOOL" => maxpool(inputs, node_for_op),
-        "BATCHNORM" => batch_norm(inputs, initializers, node_for_op),
+        "BATCHNORMALIZATION" => batch_norm(inputs, initializers, node_for_op),
         "DROPOUT" => dropout(inputs, initializers, node_for_op),
         "SOFTMAX" => softmax(inputs, node_for_op),
         "GEMM" => gemm(inputs, initializers, node_for_op),
         "MATMUL" => matmul(inputs, initializers, node_for_op),
         "REDUCESUM" => reducesum(inputs, node_for_op),
-        "GLOBALAVGPOOL" => globalavgpool(inputs, node_for_op),
+        "GLOBALAVERAGEPOOL" => globalavgpool(inputs, node_for_op),
         "LRN" => lrn(inputs, node_for_op),
         _ => Err(OnnxError::UnsupportedOperation("Operazione non supportata".to_string())),
     }

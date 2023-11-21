@@ -975,23 +975,24 @@ pub fn make_attribute<S: Into<String>, U: Into<Vec<u8>>>(
     name: S,
     attribute: Attribute<U>,
 ) -> AttributeProto {
-    let mut attr_proto: AttributeProto::new();
+    let mut attr_proto = AttributeProto::new();
     attr_proto.name = name.into();
+
     match attribute {
         Attribute::Float(val) => {
-            attr_proto.f = val;
+            attr_proto.f = val.into();
             attr_proto.r#type = attribute_proto::AttributeType::Float as i32;
         }
         Attribute::Floats(vals) => {
-            attr_proto.floats = vals;
+            attr_proto.floats = vals.into();
             attr_proto.r#type = attribute_proto::AttributeType::Floats as i32;
         }
         Attribute::Int(val) => {
-            attr_proto.i = val;
+            attr_proto.i = val.into();
             attr_proto.r#type = attribute_proto::AttributeType::Int as i32;
         }
         Attribute::Ints(vals) => {
-            attr_proto.ints = vals;
+            attr_proto.ints = vals.into();
             attr_proto.r#type = attribute_proto::AttributeType::Ints as i32;
         }
         Attribute::String(val) => {
@@ -1007,7 +1008,7 @@ pub fn make_attribute<S: Into<String>, U: Into<Vec<u8>>>(
             attr_proto.r#type = attribute_proto::AttributeType::Graph as i32;
         }
         Attribute::Graphs(vals) => {
-            attr_proto.graphs = vals;
+            attr_proto.graphs = vals.into();
             attr_proto.r#type = attribute_proto::AttributeType::Graphs as i32;
         }
         Attribute::Tensor(val) => {
@@ -1015,7 +1016,7 @@ pub fn make_attribute<S: Into<String>, U: Into<Vec<u8>>>(
             attr_proto.r#type = attribute_proto::AttributeType::Tensor as i32;
         }
         Attribute::Tensors(vals) => {
-            attr_proto.tensors = vals;
+            attr_proto.tensors = vals.into();
             attr_proto.r#type = attribute_proto::AttributeType::Tensors as i32;
         }
     }
