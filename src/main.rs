@@ -3,29 +3,27 @@ mod onnx {
     include!("onnx.rs");
 }
 
-use core::fmt;
-use std::any::type_name;
-use std::error::Error;
-use std::fs::File;
-use std::io::{ErrorKind, self, Write, Read};
-use std::ops::Index;
-use std::process::exit;
-use ndarray::{arr2, Array, Array2, Array4, ArrayD, ArrayView, Dimension, IxDyn, s, Axis, Zip};
-use onnx::tensor_proto::DataLocation;
-use tract_onnx::pb::AttributeProto;
-use tract_onnx::prelude::tract_itertools::Itertools;
-use onnx::ModelProto;
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
+use core::fmt;
+use ndarray::{arr2, s, Array, Array2, Array4, ArrayD, ArrayView, Axis, Dimension, IxDyn, Zip};
+use onnx::tensor_proto::DataLocation;
+use onnx::ModelProto;
+use operations::utils::tensor_proto_to_ndarray;
 use rand::prelude::*;
-
+use std::any::type_name;
+use std::error::Error;
+use std::fs::File;
+use std::io::{self, ErrorKind, Read, Write};
+use std::ops::Index;
+use std::process::exit;
+use tract_onnx::pb::AttributeProto;
+use tract_onnx::prelude::tract_itertools::Itertools;
 
 mod onnx_running_environment;
-mod utils;
 mod operations;
-
-
+mod utils;
 
 fn main() {
     let mut path_model: &str = "";
@@ -44,7 +42,9 @@ fn main() {
         io::stdout().flush().unwrap();
 
         let mut choice = String::new();
-        io::stdin().read_line(&mut choice).expect("Errore durante la lettura dell'input");
+        io::stdin()
+            .read_line(&mut choice)
+            .expect("Errore durante la lettura dell'input");
 
         // Rimuovi spazi e caratteri di nuova linea dall'input
         let choice = choice.trim();
@@ -55,7 +55,9 @@ fn main() {
                     io::stdout().flush().unwrap();
                     println!("vuoi usare il test set di default ? (s/n)");
                     let mut choice2 = String::new();
-                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    io::stdin()
+                        .read_line(&mut choice2)
+                        .expect("Errore durante la lettura dell'input");
                     // Rimuovi spazi e caratteri di nuova linea dall'input
                     let choice2 = choice2.trim();
                     match choice2 {
@@ -70,7 +72,7 @@ fn main() {
                         }
                         _ => println!("Scelta non valida. Riprova."),
                     }
-                };
+                }
                 break;
             }
             "2" => {
@@ -79,13 +81,15 @@ fn main() {
                     io::stdout().flush().unwrap();
                     println!("vuoi usare il test set di default ? (s/n)");
                     let mut choice2 = String::new();
-                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    io::stdin()
+                        .read_line(&mut choice2)
+                        .expect("Errore durante la lettura dell'input");
                     // Rimuovi spazi e caratteri di nuova linea dall'input
                     let choice2 = choice2.trim();
                     match choice2 {
                         "s" => {
                             path_testset = &resnet_load_testset();
-                            path_output =&resnet_load_output();
+                            path_output = &resnet_load_output();
                             break;
                         }
                         "n" => {
@@ -94,7 +98,7 @@ fn main() {
                         }
                         _ => println!("Scelta non valida. Riprova."),
                     }
-                };
+                }
                 break;
             }
             "3" => {
@@ -103,13 +107,15 @@ fn main() {
                     io::stdout().flush().unwrap();
                     println!("vuoi usare il test set di default ? (s/n)");
                     let mut choice2 = String::new();
-                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    io::stdin()
+                        .read_line(&mut choice2)
+                        .expect("Errore durante la lettura dell'input");
                     // Rimuovi spazi e caratteri di nuova linea dall'input
                     let choice2 = choice2.trim();
                     match choice2 {
                         "s" => {
                             path_testset = &squeezenet_load_testset();
-                            path_output=&squeezenet_load_output();
+                            path_output = &squeezenet_load_output();
                             break;
                         }
                         "n" => {
@@ -118,7 +124,7 @@ fn main() {
                         }
                         _ => println!("Scelta non valida. Riprova."),
                     }
-                };
+                }
                 break;
             }
             "4" => {
@@ -127,13 +133,15 @@ fn main() {
                     io::stdout().flush().unwrap();
                     println!("vuoi usare il test set di default ? (s/n)");
                     let mut choice2 = String::new();
-                    io::stdin().read_line(&mut choice2).expect("Errore durante la lettura dell'input");
+                    io::stdin()
+                        .read_line(&mut choice2)
+                        .expect("Errore durante la lettura dell'input");
                     // Rimuovi spazi e caratteri di nuova linea dall'input
                     let choice2 = choice2.trim();
                     match choice2 {
                         "s" => {
                             path_testset = &googlenet_load_testset();
-                            path_output=&googlenet_load_output();
+                            path_output = &googlenet_load_output();
                             break;
                         }
                         "n" => {
@@ -142,7 +150,7 @@ fn main() {
                         }
                         _ => println!("Scelta non valida. Riprova."),
                     }
-                };
+                }
                 break;
             }
             "5" => {
@@ -158,20 +166,62 @@ fn main() {
         exit(1)
     }
     let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
-    let model_proto: ModelProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+    let model_proto: ModelProto =
+        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
     println!("Reading the inputs ...");
     let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
-    let input_tensor: TensorProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+    let input_tensor: TensorProto =
+        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
     println!("starting Network...");
     let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
-    let pred_out = new_env.run();//predicted output
 
-    let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
-    let output_tensor: TensorProto = prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+    let pred_out = new_env.run(); //predicted output
 
+    let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
+    let output_tensor: TensorProto =
+        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+    
+    println!("Predicted classes:");
+    print_results(pred_out);
+    println!("Ground truth classes:");
+    print_results(output_tensor);
+    
 
+}
+
+fn print_results(tensor: TensorProto) {
+    let data = tensor_proto_to_ndarray::<f32>(&tensor).unwrap();
+    // Calculate total number of elements and the batch size
+    let total_elements = data.len();
+    let first_dim = data.shape()[0];
+    let inferred_dim = total_elements / first_dim;
+
+    // Reshape the tensor
+    let reshaped = data.view().into_shape((first_dim, inferred_dim)).ok().unwrap();
+
+    // Apply softmax and find the top 5 peak classes for each batch
+    let mut top_5_peak_classes = Vec::with_capacity(first_dim);
+
+    for batch in reshaped.outer_iter() {
+        let max = batch.view().fold(0. / 0., |m, &val| f32::max(m, val)); // NaN-safe max
+        let exps = batch.view().mapv(|x| (x - max).exp());
+        let sum = exps.sum();
+        let probabilities = exps / sum;
+
+        let mut indexed_values: Vec<(usize, f32)> = probabilities
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| (i, v))
+            .collect();
+        indexed_values.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap()); // Sort in descending order
+
+        let top_5: Vec<(usize, f32)> = indexed_values.iter().take(5).cloned().collect();
+        top_5_peak_classes.push(top_5);
+    }
+
+    println!("{:?}", top_5_peak_classes);
 }
 
 fn read_input(input: &str) {
@@ -184,7 +234,7 @@ fn read_input(input: &str) {
     // Read the file contents into a Vec<u8>
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).expect("Unable to read file");
-    
+
     // Deserialize the .pb file
     //let mut message = your_proto::YourMessage::new();  // Replace with your generated protobuf message type
     //message.merge_from_bytes(&buffer).expect("Unable to parse .pb file");
@@ -259,8 +309,8 @@ struct Operation {
 }
 
 fn from<T>(array: ArrayD<T>, name: String) -> Result<TensorProto, OnnxError>
-    where
-        T: Into<f32> + Into<f64> + Into<i32> + Into<i64>,
+where
+    T: Into<f32> + Into<f64> + Into<i32> + Into<i64>,
 {
     let mut tensor = TensorProto {
         dims: array.shape().iter().map(|&x| x as i64).collect(),
@@ -331,10 +381,8 @@ pub enum OnnxError {
     ShapeError(String),
 }
 
-
 impl OnnxError {
     fn new(message: &str) -> OnnxError {
-        
         OnnxError::InternalError(message.to_string())
     }
 }
@@ -355,7 +403,6 @@ impl TensorProto {
         ::std::default::Default::default()
     }
 }
-
 
 enum OperationType {
     ADD,
@@ -381,8 +428,8 @@ fn type_of<T>(_: T) -> &'static str {
 }
 
 fn into<T>(tensor: TensorProto) -> Result<ArrayD<T>, std::io::Error>
-    where
-        T: From<f32>
+where
+    T: From<f32>,
 {
     let shape: Vec<usize> = tensor.dims.iter().map(|dim| *dim as usize).collect();
 
@@ -396,6 +443,9 @@ fn into<T>(tensor: TensorProto) -> Result<ArrayD<T>, std::io::Error>
                 .collect();
             Ok(ArrayD::from_shape_vec(IxDyn(&shape), data).unwrap())
         }
-        _ => Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported data type")),
+        _ => Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Unsupported data type",
+        )),
     }
 }
