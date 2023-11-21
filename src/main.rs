@@ -169,7 +169,7 @@ fn read_input(input: &str) {
     // Read the file contents into a Vec<u8>
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer).expect("Unable to read file");
-
+    
     // Deserialize the .pb file
     //let mut message = your_proto::YourMessage::new();  // Replace with your generated protobuf message type
     //message.merge_from_bytes(&buffer).expect("Unable to parse .pb file");

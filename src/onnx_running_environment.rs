@@ -106,7 +106,7 @@ impl OnnxRunningEnvironment {
                     } = current_node;
                     if let Some(receiver) = optional_receiver {
                         let inputs = get_inputs(receiver, node, initializers);
-                        let mut output_result = find_and_do_operation(node, initializers.clone(), inputs.clone());
+                        let output_result = find_and_do_operation(node, initializers.clone(), inputs.clone());
                         match output_result {
                             Ok(mut output_data) => {
                                 output_data.name = String::from(node.clone().output.first().unwrap());
@@ -237,7 +237,9 @@ fn find_and_do_operation(
         "GEMM" => gemm(inputs, initializers, node_for_op),
         "MATMUL" => matmul(inputs, initializers, node_for_op),
         "REDUCESUM" => reducesum(inputs, node_for_op),
-        "AVERAGEPOOL" => globalavgpool(inputs, node_for_op),
+        //"AVERAGEPOOL" => globalavgpool(inputs, node_for_op), 
+        // eliminare squeezenet --> evitiamo avgpooling
+        "GLOBALAVERAGEPOOL" => globalavgpool(inputs, node_for_op),
         "LRN" => lrn(inputs, node_for_op),
         _ => Err(OnnxError::UnsupportedOperation("Operazione non supportata".to_string())),
     }
