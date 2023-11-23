@@ -36,7 +36,8 @@ fn main() {
         println!("2. resnet");
         println!("3. squeezenet");
         println!("4. googlenet");
-        println!("5. fine");
+        println!("5. alexnet");
+        println!("6. fine");
 
         print!("Seleziona un'opzione: ");
         io::stdout().flush().unwrap();
@@ -154,6 +155,32 @@ fn main() {
                 break;
             }
             "5" => {
+                path_model = &alexnet_load();
+                loop {
+                    io::stdout().flush().unwrap();
+                    println!("vuoi usare il test set di default ? (s/n)");
+                    let mut choice2 = String::new();
+                    io::stdin()
+                        .read_line(&mut choice2)
+                        .expect("Errore durante la lettura dell'input");
+                    // Rimuovi spazi e caratteri di nuova linea dall'input
+                    let choice2 = choice2.trim();
+                    match choice2 {
+                        "s" => {
+                            path_testset = &alexnet_load_testset();
+                            path_output = &alexnet_load_output();
+                            break;
+                        }
+                        "n" => {
+                            println!("implementare come inserire un test set diverso");
+                            break;
+                        }
+                        _ => println!("Scelta non valida. Riprova."),
+                    }
+                }
+                break;
+            }
+            "6" => {
                 println!("Uscita dal programma");
                 break;
             }
@@ -302,6 +329,23 @@ fn squeezenet_load_output() -> &'static str {
     let path_output = "src/squeezenet/data_squeezenet/output_0.pb";
     return path_output;
 }
+
+
+fn alexnet_load_testset() -> &'static str {
+    let path_testset = "src/alexnet/data_alexnet/input_0.pb";
+    return path_testset;
+}
+
+fn alexnet_load() -> &'static str {
+    let path_model = "src/alexnet/model.onnx";
+    return path_model;
+}
+
+fn alexnet_load_output() -> &'static str {
+    let path_output = "src/alexnet/data_alexnet/output_0.pb";
+    return path_output;
+}
+
 struct Operation {
     op_type: OperationType,
     input: Vec<TensorProto>,
