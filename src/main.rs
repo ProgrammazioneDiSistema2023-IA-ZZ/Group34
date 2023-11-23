@@ -6,6 +6,7 @@ mod onnx {
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
+use crate::utils::get_random_float_tensor;
 use core::fmt;
 use ndarray::{arr2, s, Array, Array2, Array4, ArrayD, ArrayView, Axis, Dimension, IxDyn, Zip};
 use onnx::tensor_proto::DataLocation;
@@ -26,6 +27,8 @@ mod operations;
 mod utils;
 
 fn main() {
+    print_results(get_random_float_tensor(vec![1, 1000, 1, 1]));
+
     let mut path_model: &str = "";
     let mut path_testset: &str = "";
     let mut path_output: &str = "";
@@ -182,46 +185,24 @@ fn main() {
     let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
     let output_tensor: TensorProto =
         prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
-    
+
     println!("Predicted classes:");
     print_results(pred_out);
     println!("Ground truth classes:");
     print_results(output_tensor);
-    
-
 }
 
 fn print_results(tensor: TensorProto) {
     let data = tensor_proto_to_ndarray::<f32>(&tensor).unwrap();
-    // Calculate total number of elements and the batch size
-    let total_elements = data.len();
-    let first_dim = data.shape()[0];
-    let inferred_dim = total_elements / first_dim;
 
-    // Reshape the tensor
-    let reshaped = data.view().into_shape((first_dim, inferred_dim)).ok().unwrap();
-
-    // Apply softmax and find the top 5 peak classes for each batch
-    let mut top_5_peak_classes = Vec::with_capacity(first_dim);
-
-    for batch in reshaped.outer_iter() {
-        let max = batch.view().fold(0. / 0., |m, &val| f32::max(m, val)); // NaN-safe max
-        let exps = batch.view().mapv(|x| (x - max).exp());
-        let sum = exps.sum();
-        let probabilities = exps / sum;
-
-        let mut indexed_values: Vec<(usize, f32)> = probabilities
-            .iter()
-            .enumerate()
-            .map(|(i, &v)| (i, v))
-            .collect();
-        indexed_values.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap()); // Sort in descending order
-
-        let top_5: Vec<(usize, f32)> = indexed_values.iter().take(5).cloned().collect();
-        top_5_peak_classes.push(top_5);
+    for element in data
+        .iter()
+        .enumerate()
+        .sorted_by(|a, b| b.1.total_cmp(a.1))
+        .take(3)
+    {
+        print!("|Class n:{} Value:{}| ", element.0, element.1);
     }
-
-    println!("{:?}", top_5_peak_classes);
 }
 
 fn read_input(input: &str) {
