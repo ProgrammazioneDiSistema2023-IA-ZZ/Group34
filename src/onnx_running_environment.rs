@@ -222,7 +222,7 @@ fn find_and_do_operation(
     inputs: Vec<TensorProto>,
 ) -> Result<TensorProto, OnnxError> {
     let str_op = node_for_op.op_type.to_uppercase();
-    println!("{}", str_op);
+    println!("Node: {} - Operation:{}", node_for_op.name, str_op);
 
     // //Gli input vengono inseriti dal nodo precedente nel receiver
     // let recv = nodeio.optional_receiver.ok_or(OnnxError::InternalError("[RUN op] Receiver is None. It should be Some in order to execute the operation".to_string()))?;
