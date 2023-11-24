@@ -215,7 +215,7 @@ fn main() {
 
     println!("Predicted classes:");
     print_results(pred_out);
-    println!("Ground truth classes:");
+    println!("\nGround truth classes:");
     print_results(output_tensor);
 }
 
