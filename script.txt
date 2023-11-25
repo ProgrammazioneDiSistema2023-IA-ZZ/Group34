@@ -1,0 +1,2 @@
+docker build -f Dockerfile -t server .
+docker build -f Dockerfile -t client .
