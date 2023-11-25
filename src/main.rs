@@ -264,28 +264,30 @@ fn main() {
         println!("Predicted classes:");
         print_results(pred_out);
     }
-    let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
-    let model_proto: ModelProto =
-        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+    if(use_custom_img==0){
+        let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
+        let model_proto: ModelProto =
+            prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
-    println!("Reading the inputs ...");
-    let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
-    let input_tensor: TensorProto =
-        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+        println!("Reading the inputs ...");
+        let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
+        let input_tensor: TensorProto =
+            prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
-    println!("starting Network...");
-    let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
+        println!("starting Network...");
+        let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
 
-    let pred_out = new_env.run(); //predicted output
+        let pred_out = new_env.run(); //predicted output
 
-    let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
-    let output_tensor: TensorProto =
-        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+        let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
+        let output_tensor: TensorProto =
+            prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
-    println!("Predicted classes:");
-    print_results(pred_out);
-    println!("\nGround truth classes:");
-    print_results(output_tensor);
+        println!("Predicted classes:");
+        print_results(pred_out);
+        println!("\nGround truth classes:");
+        print_results(output_tensor);
+    }
 }
 
 fn print_results(tensor: TensorProto) {
