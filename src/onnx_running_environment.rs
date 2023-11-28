@@ -33,13 +33,14 @@ pub struct OnnxRunningEnvironment {
 impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
-        let graph = model.clone().graph.unwrap();
-        //println!("{?}",graph.unwrap());
+        let mut graph = model.clone().graph.unwrap();
+        let mut input_tensor_clone=input_tensor.clone();
         let mut input_senders: Vec<Sender<TensorProto>> = Vec::new();
         let (output_sender, output_receiver) = channel();
         let input_node_name: &String = &graph.input.get(0).unwrap().name;
         let output_node_name: &String = &graph.output.get(0).unwrap().name;
         let mut optional_receiver: Option<Receiver<TensorProto>> = None;
+        input_tensor_clone.name=input_node_name.clone();
         for current_node in graph.node.into_iter() {
             let (sender, receiver) = channel();
             let mut senders = Vec::new();
@@ -52,12 +53,15 @@ impl OnnxRunningEnvironment {
                 senders.push(output_sender.clone());
             }
             optional_receiver = Some(receiver);
-
+            let mut current_node_clone=current_node.clone();
+            if(current_node.name==""){
+                current_node_clone.name="name_node".to_string();
+            }
             //per ogni valore NodeProto creo un elemento del vettore node_io_vec
             let new_node_io = NodeIO {
                 senders, //è il vettore dei sender che verrà generato in seguito dai nodi che hanno come input l'output del nodo in questione
                 optional_receiver,   //receiver da cui leggere gli input
-                node: current_node.clone(),
+                node: current_node_clone.clone(),
                 initializers: get_initializers(model.clone().graph.unwrap(), current_node.clone()),
             };
 
@@ -76,7 +80,7 @@ impl OnnxRunningEnvironment {
             node_io_vec.push(new_node_io);
         }
         Self {
-            input_tensor,
+            input_tensor:input_tensor_clone,
             input_senders,
             output_receiver,
             model,
@@ -146,8 +150,9 @@ pub fn get_inputs(
 ) -> Vec<TensorProto> {
     let mut input = receiver.recv().unwrap();
     let inputs_and_initializers_to_read_names = node.input.clone();
+    let outputs_and_initializers_to_read_names = input.clone();
     let initializers_names: Vec<String> = initializers.iter().map(|i| i.name.clone()).collect();
-    let mut inputs_names = vec![input.clone().name];
+    let mut inputs_names = vec![input.name.clone()];
     let mut inputs = vec![input.clone()];
     while !is_input_reading_finished(
         inputs_and_initializers_to_read_names.clone(),

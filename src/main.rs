@@ -53,7 +53,7 @@ fn main() {
         println!("1. mobilenet");
         println!("2. resnet");
         println!("3. squeezenet");
-        println!("4. googlenet");
+        println!("4. caffenet");
         println!("5. alexnet");
         println!("6. fine");
 
@@ -168,7 +168,7 @@ fn main() {
                 break;
             }
             "4" => {
-                path_model = &googlenet_load();
+                path_model = &caffenet_load();
                 loop {
                     io::stdout().flush().unwrap();
                     println!("vuoi usare il test set di default ? (s/n)");
@@ -180,8 +180,8 @@ fn main() {
                     let choice2 = choice2.trim();
                     match choice2 {
                         "s" => {
-                            path_testset = &googlenet_load_testset();
-                            path_output = &googlenet_load_output();
+                            path_testset = &caffenet_load_testset();
+                            path_output = &caffenet_load_output();
                             break;
                         }
                         "n" => {
@@ -395,6 +395,21 @@ fn alexnet_load() -> &'static str {
 
 fn alexnet_load_output() -> &'static str {
     let path_output = "src/alexnet/data_alexnet/output_0.pb";
+    return path_output;
+}
+
+
+fn caffenet_load_testset() -> &'static str {
+    let path_testset = "src/caffenet/data_caffenet/input_0.pb";
+    return path_testset;
+}
+
+fn caffenet_load() -> &'static str {
+    let path_model = "src/caffenet/model.onnx";
+    return path_model;
+}
+fn caffenet_load_output() -> &'static str {
+    let path_output = "src/caffenet/data_caffenet/output_0.pb";
     return path_output;
 }
 fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, new_height: u32) -> DynamicImage {
