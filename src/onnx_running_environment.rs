@@ -18,6 +18,7 @@ use crate::operations::softmax;
 use crate::utils::get_random_float_tensor;
 use crate::OnnxError;
 use image::flat::Error;
+use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Instant;
@@ -139,6 +140,59 @@ impl OnnxRunningEnvironment {
             result.name
         );
         result
+    }
+    pub fn run_sequential(&self) -> TensorProto {
+        // Capture the current time before running the model
+        // model: &ModelProto, input_tensor: TensorProto
+        let start = Instant::now();
+        let model =self.model.clone();
+        let input_tensor = self.input_tensor.clone();
+        // Extract the graph from the model.
+        let graph = model.graph.unwrap();
+    
+        // Initialize a map to hold the tensors for each node's input.
+        let mut input_map: HashMap<String, TensorProto> = HashMap::new();
+        input_map.insert(graph.input[0].name.clone(), input_tensor);
+    
+        // Map the initializers by their names for easy lookup.
+        let initializers_map: HashMap<String, TensorProto> = graph
+            .initializer
+            .iter()
+            .map(|tensor_proto| (tensor_proto.name.clone(), tensor_proto.clone()))
+            .collect();
+    
+        // Iterate over each node in the graph.
+        for node in &graph.node {
+            // Gather the inputs for the current node.
+            let node_inputs: Vec<_> = node
+                .input
+                .iter()
+                .filter_map(|name| input_map.get(name).cloned())
+                .collect();
+    
+            // Gather the initializers for the current node.
+            let node_initializers: Vec<_> = node
+                .input
+                .iter()
+                .filter_map(|name| initializers_map.get(name).cloned())
+                .collect();
+
+            let output_tensor = find_and_do_operation(node, node_inputs, node_initializers).expect("Failed to run node");
+    
+            let output_name = output_tensor.name.to_string();
+            // Store the output tensor so it can be used as input for subsequent nodes.
+            input_map.insert(output_name, output_tensor);
+
+        }
+    
+        let duration = start.elapsed();
+        println!("duration : {:?})\n", duration);
+    
+        // Return the output tensor for the entire model.
+        input_map
+            .get(&graph.output[0].name)
+            .expect("Output tensor not found")
+            .clone()
     }
 }
 
