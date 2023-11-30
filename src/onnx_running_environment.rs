@@ -149,7 +149,10 @@ impl OnnxRunningEnvironment {
         let input_tensor = self.input_tensor.clone();
         // Extract the graph from the model.
         let graph = model.graph.unwrap();
-    
+        println!(
+            "Start running sequential using a tensor of dims: {:?} and name: {:?}",
+            self.input_tensor.dims, self.input_tensor.name
+        );
         // Initialize a map to hold the tensors for each node's input.
         let mut input_map: HashMap<String, TensorProto> = HashMap::new();
         input_map.insert(graph.input[0].name.clone(), input_tensor);
@@ -177,7 +180,7 @@ impl OnnxRunningEnvironment {
                 .filter_map(|name| initializers_map.get(name).cloned())
                 .collect();
 
-            let output_tensor = find_and_do_operation(node, node_inputs, node_initializers).expect("Failed to run node");
+            let output_tensor = find_and_do_operation(node, node_initializers,node_inputs).expect("Failed to run node");
     
             let output_name = output_tensor.name.to_string();
             // Store the output tensor so it can be used as input for subsequent nodes.

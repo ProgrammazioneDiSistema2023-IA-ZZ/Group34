@@ -277,7 +277,7 @@ fn main() {
         println!("starting Network...");
         let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
 
-        let pred_out = new_env.run(); //predicted output
+        let pred_out = new_env.run_sequential(); //predicted output
 
         let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
         let output_tensor: TensorProto =
