@@ -46,6 +46,28 @@ fn main() {
     let mut path_output: &str = "";
     let mut use_custom_img=0;
     let mut path_img="";
+    let mut flag_execution=true;
+    loop {
+        io::stdout().flush().unwrap();
+        println!("\nvuoi usare eseguire la sete in modo parallelo? (s/n) \n indicando 'n' sarà eseguita in modo sequenziale");
+        let mut choice4 = String::new();
+        io::stdin()
+            .read_line(&mut choice4)
+            .expect("Errore durante la lettura dell'input");
+        // Rimuovi spazi e caratteri di nuova linea dall'input
+        let choice4 = choice4.trim();
+        match choice4 {
+            "s" => {
+                flag_execution=true;
+                break;
+            }
+            "n" => {
+                flag_execution=false;
+                break;
+            }
+            _ => println!("Scelta non valida. Riprova."),
+        }
+    }
     let mut take_choice = String::new();
     loop {
         println!("Onnx runtime");
@@ -259,10 +281,16 @@ fn main() {
         println!("starting Network...");
         let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
 
-        let pred_out = new_env.run(); //predicted output
+        if(flag_execution==true){
+            let pred_out = new_env.run(); //predicted output par
+            println!("Predicted classes:");
+            print_results(pred_out);
+        }else{
+            let pred_out = new_env.run_sequential(); //predicted output seq
+            println!("Predicted classes:");
+            print_results(pred_out);
+        }
 
-        println!("Predicted classes:");
-        print_results(pred_out);
     }
     if(use_custom_img==0){
         let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
@@ -276,15 +304,19 @@ fn main() {
 
         println!("starting Network...");
         let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
-
-        let pred_out = new_env.run_sequential(); //predicted output
-
+        if(flag_execution==true){
+            let pred_out = new_env.run(); //predicted output par
+            println!("Predicted classes:");
+            print_results(pred_out);
+        }else{
+            let pred_out = new_env.run_sequential(); //predicted output seq
+            println!("Predicted classes:");
+            print_results(pred_out);
+        }
         let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
         let output_tensor: TensorProto =
             prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
-        println!("Predicted classes:");
-        print_results(pred_out);
         println!("\nGround truth classes:");
         print_results(output_tensor);
     }
