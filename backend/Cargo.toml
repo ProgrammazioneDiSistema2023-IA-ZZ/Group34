@@ -1,7 +1,12 @@
 [package]
 name = "rust-project"
 version = "0.1.0"
+license = "ISC"
 edition = "2021"
+exclude = ["index.node"]
+
+[lib]
+crate-type = ["cdylib"]
 
 
 [dependencies]
@@ -16,6 +21,10 @@ prost-types = "0.11.8"
 rand = "0.8.5"
 num-traits = "0.2.14"
 
+[dependencies.neon]
+version = "0.10"
+default-features = false
+features = ["napi-6"]
 
 [build-dependencies]
 prost-build = "0.11.8"
