@@ -3,6 +3,10 @@ const cors = require('cors');
 const app = express();
 const port = 3001;
 
+//get rust functions
+const rust = require('.');
+console.log(rust.hello());
+
 app.use(cors());
 
 app.get('/get', (req, res) => {
