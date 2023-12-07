@@ -1,4 +1,4 @@
-use crate::onnx::{self, GraphProto, ModelProto, NodeProto, TensorProto};
+use crate::onnx::{GraphProto, ModelProto, NodeProto, TensorProto};
 use crate::operations::add;
 use crate::operations::batch_norm;
 use crate::operations::concat;
@@ -7,7 +7,7 @@ use crate::operations::dropout;
 use crate::operations::exp;
 use crate::operations::flatten;
 use crate::operations::gemm;
-use crate::operations::global_average_pool::{self, globalavgpool};
+use crate::operations::global_average_pool::{globalavgpool};
 use crate::operations::lrn;
 use crate::operations::matmul;
 use crate::operations::maxpool;
@@ -15,9 +15,9 @@ use crate::operations::reducesum;
 use crate::operations::relu;
 use crate::operations::reshape;
 use crate::operations::softmax;
-use crate::utils::get_random_float_tensor;
+
 use crate::OnnxError;
-use image::flat::Error;
+
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
@@ -34,7 +34,7 @@ pub struct OnnxRunningEnvironment {
 impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
-        let mut graph = model.clone().graph.unwrap();
+        let graph = model.clone().graph.unwrap();
         let mut input_tensor_clone=input_tensor.clone();
         let mut input_senders: Vec<Sender<TensorProto>> = Vec::new();
         let (output_sender, output_receiver) = channel();
@@ -55,7 +55,7 @@ impl OnnxRunningEnvironment {
             }
             optional_receiver = Some(receiver);
             let mut current_node_clone=current_node.clone();
-            if(current_node.name==""){
+            if current_node.name=="" {
                 current_node_clone.name="name_node".to_string();
             }
             //per ogni valore NodeProto creo un elemento del vettore node_io_vec
@@ -207,7 +207,7 @@ pub fn get_inputs(
 ) -> Vec<TensorProto> {
     let mut input = receiver.recv().unwrap();
     let inputs_and_initializers_to_read_names = node.input.clone();
-    let outputs_and_initializers_to_read_names = input.clone();
+    let _outputs_and_initializers_to_read_names = input.clone();
     let initializers_names: Vec<String> = initializers.iter().map(|i| i.name.clone()).collect();
     let mut inputs_names = vec![input.name.clone()];
     let mut inputs = vec![input.clone()];
@@ -230,7 +230,7 @@ pub fn is_input_reading_finished(
 ) -> bool {
     let mut elements_found = 0;
     inputs_names.iter().for_each(|input_name| {
-        if let Some(n) = inputs_and_initializers_to_read_names
+        if let Some(_n) = inputs_and_initializers_to_read_names
             .iter()
             .find(|i| i == &input_name)
         {
@@ -238,7 +238,7 @@ pub fn is_input_reading_finished(
         }
     });
     initializers_names.iter().for_each(|initializer_names| {
-        if let Some(n) = inputs_and_initializers_to_read_names
+        if let Some(_n) = inputs_and_initializers_to_read_names
             .iter()
             .find(|i| i == &initializer_names)
         {

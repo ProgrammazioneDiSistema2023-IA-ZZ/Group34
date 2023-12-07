@@ -8,15 +8,15 @@ use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
 use crate::operations::utils::ndarray_to_tensor_proto;
-use crate::utils::get_random_float_tensor;
+
 use crate::utils::CLASSES_NAMES;
-use core::fmt;
-use std::collections::HashMap;
+
+
 use std::collections::LinkedList;
 use image::GenericImage;
 use image::imageops;
 use ndarray::Array3;
-use ndarray::{arr2, s, Array, Array2, Array4, ArrayD, ArrayView, Axis, Dimension, IxDyn, Zip};
+use ndarray::{Array, Array2, Array4, ArrayD, Axis, Dimension, IxDyn};
 use onnx::AttributeProto;
 use onnx::FunctionProto;
 use onnx::GraphProto;
@@ -30,10 +30,10 @@ use rand::prelude::*;
 use image::{GenericImageView, DynamicImage};
 use tract_onnx::tract_core::tract_data::itertools::Itertools;
 use std::any::type_name;
-use std::error::Error;
+
 use std::fs::File;
-use std::io::{self, ErrorKind, Read, Write};
-use std::ops::Index;
+use std::io::{self, Read, Write};
+
 use std::process::exit;
 mod onnx_running_environment;
 mod operations;
@@ -269,10 +269,10 @@ fn main() {
     }
     // Load and parse your ProtoBuf file (e.g., "squeezenet.onnx")
     //let data = std::fs::read("src/squeezenet.onnx").expect("Failed to read ProtoBuf file");
-    if ((path_model.is_empty() || path_testset.is_empty()) && use_custom_img==0) {
+    if (path_model.is_empty() || path_testset.is_empty()) && use_custom_img==0 {
         exit(1)
     }
-    if ((path_model.is_empty() || path_testset.is_empty()) && use_custom_img==1) {
+    if (path_model.is_empty() || path_testset.is_empty()) && use_custom_img==1 {
         // uso immagine fornita da utente
         let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
         let model_proto: ModelProto =
@@ -286,7 +286,7 @@ fn main() {
         println!("starting Network...");
         let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
 
-        if(flag_execution==true){
+        if flag_execution==true {
             let pred_out = new_env.run(); //predicted output par
             println!("Predicted classes:");
             print_results(pred_out);
@@ -297,7 +297,7 @@ fn main() {
         }
 
     }
-    if(use_custom_img==0){
+    if use_custom_img==0 {
         let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
         let model_proto: ModelProto =
             prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
@@ -309,7 +309,7 @@ fn main() {
 
         println!("starting Network...");
         let new_env = OnnxRunningEnvironment::new(model_proto.clone(), input_tensor);
-        if(flag_execution==true){
+        if flag_execution==true {
             let pred_out = new_env.run(); //predicted output par
             println!("Predicted classes:");
             print_results(pred_out);
@@ -330,7 +330,7 @@ fn remove_node(node_name:String,model:ModelProto)-> ModelProto{
     let mut node_map: LinkedList<NodeProto> = LinkedList::new();
     for node in model.clone().graph.unwrap().node {
         // inserisco nella mappa nodi con chiave nome
-        if(node.name==node_name){
+        if node.name==node_name {
             //non inserisco il nodo
         }else{
             node_map.push_back(node);
@@ -369,7 +369,7 @@ fn remove_node(node_name:String,model:ModelProto)-> ModelProto{
 fn insert_node(node_name:String,
     model:ModelProto,
     input: Vec<String>,
-    initializers: Vec<String>,
+    _initializers: Vec<String>,
     output:Vec<String>,
     operation_type:String,
     domain:String,
@@ -390,7 +390,7 @@ fn insert_node(node_name:String,
     );
     for node in model.clone().graph.unwrap().node {
         // inserisco nella mappa nodi con chiave nome
-        if(node.name==node_name){
+        if node.name==node_name {
             //nodo da modificare 
             // inserisco nella lista il nodo modificato
             node_map.push_back(node_to_insert.clone());
@@ -428,7 +428,7 @@ fn insert_node(node_name:String,
 fn modify_node(node_name:String,
     model:ModelProto,
     input: Vec<String>,
-    initializers: Vec<String>,
+    _initializers: Vec<String>,
     output:Vec<String>,
     operation_type:String,
     domain:String,
@@ -447,7 +447,7 @@ fn modify_node(node_name:String,
     );
     for node in model.clone().graph.unwrap().node {
         // inserisco nella mappa nodi con chiave nome
-        if(node.name==node_name){
+        if node.name==node_name {
             //nodo da modificare 
             // inserisco nella lista il nodo modificato
             node_map.push_back(node_to_insert.clone());
