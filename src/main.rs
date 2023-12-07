@@ -2,7 +2,8 @@
 mod onnx {
     include!("onnx.rs");
 }
-
+use crate::onnx::*;
+use crate::onnx::NodeProto;
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
@@ -10,24 +11,30 @@ use crate::operations::utils::ndarray_to_tensor_proto;
 use crate::utils::get_random_float_tensor;
 use crate::utils::CLASSES_NAMES;
 use core::fmt;
+use std::collections::HashMap;
+use std::collections::LinkedList;
 use image::GenericImage;
 use image::imageops;
 use ndarray::Array3;
 use ndarray::{arr2, s, Array, Array2, Array4, ArrayD, ArrayView, Axis, Dimension, IxDyn, Zip};
+use onnx::AttributeProto;
+use onnx::FunctionProto;
+use onnx::GraphProto;
+use onnx::OperatorSetIdProto;
+use onnx::StringStringEntryProto;
+use onnx::TrainingInfoProto;
 use onnx::tensor_proto::DataLocation;
 use onnx::ModelProto;
 use operations::utils::tensor_proto_to_ndarray;
 use rand::prelude::*;
 use image::{GenericImageView, DynamicImage};
+use tract_onnx::tract_core::tract_data::itertools::Itertools;
 use std::any::type_name;
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, ErrorKind, Read, Write};
 use std::ops::Index;
 use std::process::exit;
-use tract_onnx::pb::AttributeProto;
-use tract_onnx::prelude::tract_itertools::Itertools;
-
 mod onnx_running_environment;
 mod operations;
 mod utils;
@@ -39,8 +46,6 @@ const MEAN: [f32; 3] = [0.485, 0.456, 0.406];
 const STD: [f32; 3] = [0.229, 0.224, 0.225];
 const SCALEFACTOR: f32 = 255.0;
 fn main() {
-    print_results(get_random_float_tensor(vec![1, 1000, 1, 1]));
-
     let mut path_model: &str = "";
     let mut path_testset: &str = "";
     let mut path_output: &str = "";
@@ -303,7 +308,7 @@ fn main() {
             prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
 
         println!("starting Network...");
-        let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
+        let new_env = OnnxRunningEnvironment::new(model_proto.clone(), input_tensor);
         if(flag_execution==true){
             let pred_out = new_env.run(); //predicted output par
             println!("Predicted classes:");
@@ -321,7 +326,248 @@ fn main() {
         print_results(output_tensor);
     }
 }
+fn remove_node(node_name:String,model:ModelProto)-> ModelProto{
+    let mut node_map: LinkedList<NodeProto> = LinkedList::new();
+    for node in model.clone().graph.unwrap().node {
+        // inserisco nella mappa nodi con chiave nome
+        if(node.name==node_name){
+            //non inserisco il nodo
+        }else{
+            node_map.push_back(node);
+        }
+    }
+    // nella mappa ho i nodi corretti da inserire 
+    println!("{:?}", node_map);
+    // devo ricreare il modello
+    let graph=GraphProto {
+        node: node_map.into_iter().collect(),
+        name: model.clone().graph.unwrap().name,
+        initializer: model.clone().graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
+        sparse_initializer: model.clone().graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
+        doc_string: model.clone().graph.unwrap().doc_string,
+        input: model.clone().graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
+        output: model.clone().graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
+        value_info: model.clone().graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
+        quantization_annotation: model.clone().graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
+    };
+    let model_new = ModelProto {
+        ir_version: model.ir_version,
+        opset_import: model.opset_import, //opset_import,
+        producer_name: model.producer_name,
+        producer_version: model.producer_version,
+        domain: model.domain,
+        model_version: model.model_version,
+        doc_string: model.doc_string,
+        graph: Some(graph),
+        metadata_props: model.metadata_props, // Aggiungere eventuali proprietà metadata
+        training_info: model.training_info, // Aggiungere eventuali informazioni di addestramento
+        functions: model.functions, // Aggiungere eventuali funzioni locali
+    };
+    return model_new
+}
 
+fn insert_node(node_name:String,
+    model:ModelProto,
+    input: Vec<String>,
+    initializers: Vec<String>,
+    output:Vec<String>,
+    operation_type:String,
+    domain:String,
+    attribute: Vec<AttributeProto>,
+    doc_string: String
+
+
+)-> ModelProto{
+    let mut node_map: LinkedList<NodeProto> = LinkedList::new();
+    let node_to_insert = NodeProto::new(
+        input,
+        output,
+        node_name.clone(),
+        operation_type,
+        domain,
+        attribute, // Sostituisci con gli attributi effettivi se necessario
+        doc_string,
+    );
+    for node in model.clone().graph.unwrap().node {
+        // inserisco nella mappa nodi con chiave nome
+        if(node.name==node_name){
+            //nodo da modificare 
+            // inserisco nella lista il nodo modificato
+            node_map.push_back(node_to_insert.clone());
+        
+        }else{
+            node_map.push_back(node);
+        }
+    }
+    let graph=GraphProto {
+        node: node_map.into_iter().collect(),
+        name: model.clone().graph.unwrap().name,
+        initializer: model.clone().graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
+        sparse_initializer: model.clone().graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
+        doc_string: model.clone().graph.unwrap().doc_string,
+        input: model.clone().graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
+        output: model.clone().graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
+        value_info: model.clone().graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
+        quantization_annotation: model.clone().graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
+    };
+    let model_new = ModelProto {
+        ir_version: model.ir_version,
+        opset_import: model.opset_import, //opset_import,
+        producer_name: model.producer_name,
+        producer_version: model.producer_version,
+        domain: model.domain,
+        model_version: model.model_version,
+        doc_string: model.doc_string,
+        graph: Some(graph),
+        metadata_props: model.metadata_props, // Aggiungere eventuali proprietà metadata
+        training_info: model.training_info, // Aggiungere eventuali informazioni di addestramento
+        functions: model.functions, // Aggiungere eventuali funzioni locali
+    };
+    return model_new;
+}
+fn modify_node(node_name:String,
+    model:ModelProto,
+    input: Vec<String>,
+    initializers: Vec<String>,
+    output:Vec<String>,
+    operation_type:String,
+    domain:String,
+    attribute: Vec<AttributeProto>,
+    doc_string: String
+)-> ModelProto{
+    let mut node_map: LinkedList<NodeProto> = LinkedList::new();
+    let node_to_insert = NodeProto::new(
+        input,
+        output,
+        node_name.clone(),
+        operation_type,
+        domain,
+        attribute, // Sostituisci con gli attributi effettivi se necessario
+        doc_string,
+    );
+    for node in model.clone().graph.unwrap().node {
+        // inserisco nella mappa nodi con chiave nome
+        if(node.name==node_name){
+            //nodo da modificare 
+            // inserisco nella lista il nodo modificato
+            node_map.push_back(node_to_insert.clone());
+        
+        }else{
+            node_map.push_back(node);
+        }
+    }
+    let graph=GraphProto {
+        node: node_map.into_iter().collect(),
+        name: model.clone().graph.unwrap().name,
+        initializer: model.clone().graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
+        sparse_initializer: model.clone().graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
+        doc_string: model.clone().graph.unwrap().doc_string,
+        input: model.clone().graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
+        output: model.clone().graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
+        value_info: model.clone().graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
+        quantization_annotation: model.clone().graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
+    };
+    let model_new = ModelProto {
+        ir_version: model.ir_version,
+        opset_import: model.opset_import, //opset_import,
+        producer_name: model.producer_name,
+        producer_version: model.producer_version,
+        domain: model.domain,
+        model_version: model.model_version,
+        doc_string: model.doc_string,
+        graph: Some(graph),
+        metadata_props: model.metadata_props, // Aggiungere eventuali proprietà metadata
+        training_info: model.training_info, // Aggiungere eventuali informazioni di addestramento
+        functions: model.functions, // Aggiungere eventuali funzioni locali
+    };
+    return model_new;
+}
+pub fn new_node_proto() -> NodeProto {
+    NodeProto {
+        input: Vec::new(),
+        output: Vec::new(),
+        name: String::new(),
+        op_type: String::new(),
+        domain: String::new(),
+        attribute: Vec::new(), // Assicurati di avere la definizione corretta di AttributeProto
+        doc_string: String::new(),
+    }
+}
+impl NodeProto {
+    pub fn new(
+        input: Vec<String>,
+        output: Vec<String>,
+        name: String,
+        op_type: String,
+        domain: String,
+        attribute: Vec<AttributeProto>,  // Assicurati di avere la definizione corretta di AttributeProto
+        doc_string: String,
+    ) -> Self {
+        NodeProto {
+            input,
+            output,
+            name,
+            op_type,
+            domain,
+            attribute,
+            doc_string,
+        }
+    }
+}
+impl ModelProto {
+    pub fn new(
+        ir_version: i64,
+        opset_import: Vec<OperatorSetIdProto>,
+        producer_name: String,
+        producer_version: String,
+        domain: String,
+        model_version: i64,
+        doc_string: String,
+        graph: Option<GraphProto>,
+        metadata_props: Vec<StringStringEntryProto>,
+        training_info: Vec<TrainingInfoProto>,
+        functions: Vec<FunctionProto>,
+    ) -> Self {
+        ModelProto {
+            ir_version,
+            opset_import,
+            producer_name,
+            producer_version,
+            domain,
+            model_version,
+            doc_string,
+            graph,
+            metadata_props,
+            training_info,
+            functions,
+        }
+    }
+}
+impl GraphProto {
+    pub fn new(
+        node: Vec<NodeProto>,
+        name: String,
+        initializer: Vec<TensorProto>,
+        sparse_initializer: Vec<SparseTensorProto>,
+        doc_string: String,
+        input: Vec<ValueInfoProto>,
+        output: Vec<ValueInfoProto>,
+        value_info: Vec<ValueInfoProto>,
+        quantization_annotation: Vec<TensorAnnotation>,
+    ) -> Self {
+        GraphProto {
+            node,
+            name,
+            initializer,
+            sparse_initializer,
+            doc_string,
+            input,
+            output,
+            value_info,
+            quantization_annotation,
+        }
+    }
+}
 fn print_results(tensor: TensorProto) {
     let data = tensor_proto_to_ndarray::<f32>(&tensor).unwrap();
 
