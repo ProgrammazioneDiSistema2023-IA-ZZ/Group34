@@ -374,9 +374,9 @@ fn insert_node(node_name:String,
     operation_type:String,
     domain:String,
     attribute: Vec<AttributeProto>,
-    doc_string: String
-
-
+    doc_string: String,
+    node_before: Option<NodeProto>,// uso questi parametri per inserire il nodo in una pos specifica
+    node_after: Option<NodeProto>// possono essere entrambi none se per esempio è il primo nodo
 )-> ModelProto{
     let mut node_map: LinkedList<NodeProto> = LinkedList::new();
     let node_to_insert = NodeProto::new(
@@ -385,19 +385,35 @@ fn insert_node(node_name:String,
         node_name.clone(),
         operation_type,
         domain,
-        attribute, // Sostituisci con gli attributi effettivi se necessario
+        attribute, 
         doc_string,
     );
+    let mut before: Option<NodeProto>=None;
     for node in model.clone().graph.unwrap().node {
-        // inserisco nella mappa nodi con chiave nome
-        if node.name==node_name {
-            //nodo da modificare 
-            // inserisco nella lista il nodo modificato
-            node_map.push_back(node_to_insert.clone());
+
+        if node.name==node_after.clone().unwrap().name || node.name==node_before.clone().unwrap().name
+         {
+            //controllo se il nome del nodo successivo è uguale
+            if before.clone().unwrap().name==node_before.clone().unwrap().name || before.clone().is_none()==node_before.clone().is_none() {
+                // se anche il nome del nodo precedente corrisponde
+                // inserisco il nuovo nodo nella posizione specificata
+                node_map.push_back(node_to_insert.clone());
+            }
+    
         
         }else{
-            node_map.push_back(node);
+            node_map.push_back(node.clone());
         }
+        // salvo il nodo precedente
+        before = Some(node.clone());
+    }
+    // se il nodo che voglio inserire è l'ultimo non avra un successivo quindi ho salvato 
+    // uscendo dal for before come ultimo nodo della rete quindi vado a fare push 
+    if before.clone().unwrap().name==node_before.clone().unwrap().name && node_before.clone().is_none() {
+        // se anche il nome del nodo precedente corrisponde
+        // inserisco il nuovo nodo nella posizione specificata
+        // in questo caso sarà l'ultimo nodo 
+        node_map.push_back(node_to_insert.clone());
     }
     let graph=GraphProto {
         node: node_map.into_iter().collect(),
@@ -412,16 +428,16 @@ fn insert_node(node_name:String,
     };
     let model_new = ModelProto {
         ir_version: model.ir_version,
-        opset_import: model.opset_import, //opset_import,
+        opset_import: model.opset_import,
         producer_name: model.producer_name,
         producer_version: model.producer_version,
         domain: model.domain,
         model_version: model.model_version,
         doc_string: model.doc_string,
         graph: Some(graph),
-        metadata_props: model.metadata_props, // Aggiungere eventuali proprietà metadata
-        training_info: model.training_info, // Aggiungere eventuali informazioni di addestramento
-        functions: model.functions, // Aggiungere eventuali funzioni locali
+        metadata_props: model.metadata_props, 
+        training_info: model.training_info, 
+        functions: model.functions, 
     };
     return model_new;
 }
@@ -442,7 +458,7 @@ fn modify_node(node_name:String,
         node_name.clone(),
         operation_type,
         domain,
-        attribute, // Sostituisci con gli attributi effettivi se necessario
+        attribute, 
         doc_string,
     );
     for node in model.clone().graph.unwrap().node {
@@ -459,13 +475,13 @@ fn modify_node(node_name:String,
     let graph=GraphProto {
         node: node_map.into_iter().collect(),
         name: model.clone().graph.unwrap().name,
-        initializer: model.clone().graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
-        sparse_initializer: model.clone().graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
+        initializer: model.clone().graph.unwrap().initializer, 
+        sparse_initializer: model.clone().graph.unwrap().sparse_initializer, 
         doc_string: model.clone().graph.unwrap().doc_string,
-        input: model.clone().graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
-        output: model.clone().graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
-        value_info: model.clone().graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
-        quantization_annotation: model.clone().graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
+        input: model.clone().graph.unwrap().input, 
+        output: model.clone().graph.unwrap().output, 
+        value_info: model.clone().graph.unwrap().value_info, 
+        quantization_annotation: model.clone().graph.unwrap().quantization_annotation, 
     };
     let model_new = ModelProto {
         ir_version: model.ir_version,
