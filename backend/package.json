@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.node",
   "scripts": {
+    "start-d": "node index.js",
     "start": "npm run build && node index.js",
     "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
     "build-debug": "npm run build --",
