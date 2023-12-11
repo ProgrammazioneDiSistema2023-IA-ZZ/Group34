@@ -619,91 +619,91 @@ fn read_input(input: &str) {
 }
 
 fn mobilenet_load_testset() -> &'static str {
-    let path_testset = "src/mobilenet/data_mobilenet/input_0.pb";
+    let path_testset = "src/models/mobilenet/data_mobilenet/input_0.pb";
     return path_testset;
 }
 
 fn mobilenet_load() -> &'static str {
-    let path_model = "src/mobilenet/model.onnx";
+    let path_model = "src/models/mobilenet/model.onnx";
     return path_model;
 }
 
 fn mobilenet_load_output() -> &'static str {
-    let path_output = "src/mobilenet/data_mobilenet/output_0.pb";
+    let path_output = "src/models/mobilenet/data_mobilenet/output_0.pb";
     return path_output;
 }
 
 fn googlenet_load_testset() -> &'static str {
-    let path_testset = "src/googlenet/data_googlenet/input_0.pb";
+    let path_testset = "src/models/googlenet/data_googlenet/input_0.pb";
     return path_testset;
 }
 
 fn googlenet_load() -> &'static str {
-    let path_model = "src/googlenet/model.onnx";
+    let path_model = "src/models/googlenet/model.onnx";
     return path_model;
 }
 fn googlenet_load_output() -> &'static str {
-    let path_output = "src/googlenet/data_googlenet/output_0.pb";
+    let path_output = "src/models/googlenet/data_googlenet/output_0.pb";
     return path_output;
 }
 fn resnet_load_testset() -> &'static str {
-    let path_testset = "src/resnet/data_resnet/input_0.pb";
+    let path_testset = "src/models/resnet/data_resnet/input_0.pb";
     return path_testset;
 }
 
 fn resnet_load() -> &'static str {
-    let path_model = "src/resnet/model.onnx";
+    let path_model = "src/models/resnet/model.onnx";
     return path_model;
 }
 
 fn resnet_load_output() -> &'static str {
-    let path_output = "src/resnet/data_resnet/output_0.pb";
+    let path_output = "src/models/resnet/data_resnet/output_0.pb";
     return path_output;
 }
 
 fn squeezenet_load_testset() -> &'static str {
-    let path_testset = "src/squeezenet/data_squeezenet/input_0.pb";
+    let path_testset = "src/models/squeezenet/data_squeezenet/input_0.pb";
     return path_testset;
 }
 
 fn squeezenet_load() -> &'static str {
-    let path_model = "src/squeezenet/model.onnx";
+    let path_model = "src/models/squeezenet/model.onnx";
     return path_model;
 }
 
 fn squeezenet_load_output() -> &'static str {
-    let path_output = "src/squeezenet/data_squeezenet/output_0.pb";
+    let path_output = "src/models/squeezenet/data_squeezenet/output_0.pb";
     return path_output;
 }
 
 
 fn alexnet_load_testset() -> &'static str {
-    let path_testset = "src/alexnet/data_alexnet/input_0.pb";
+    let path_testset = "src/models/alexnet/data_alexnet/input_0.pb";
     return path_testset;
 }
 
 fn alexnet_load() -> &'static str {
-    let path_model = "src/alexnet/model.onnx";
+    let path_model = "src/models/alexnet/model.onnx";
     return path_model;
 }
 
 fn alexnet_load_output() -> &'static str {
-    let path_output = "src/alexnet/data_alexnet/output_0.pb";
+    let path_output = "src/models/alexnet/data_alexnet/output_0.pb";
     return path_output;
 }
 
 
 fn caffenet_load_testset() -> &'static str {
-    let path_testset = "src/caffenet/data_caffenet/input_0.pb";
+    let path_testset = "src/models/caffenet/data_caffenet/input_0.pb";
     return path_testset;
 }
 
 fn caffenet_load() -> &'static str {
-    let path_model = "src/caffenet/model.onnx";
+    let path_model = "src/models/caffenet/model.onnx";
     return path_model;
 }
 fn caffenet_load_output() -> &'static str {
-    let path_output = "src/caffenet/data_caffenet/output_0.pb";
+    let path_output = "src/models/caffenet/data_caffenet/output_0.pb";
     return path_output;
 }
 fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, new_height: u32) -> DynamicImage {
