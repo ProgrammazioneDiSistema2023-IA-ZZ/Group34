@@ -287,11 +287,11 @@ fn main() {
         let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
 
         if flag_execution==true {
-            let pred_out = new_env.run(); //predicted output par
+            let pred_out = new_env.run(flag_execution); //predicted output par
             println!("Predicted classes:");
             print_results(pred_out);
         }else{
-            let pred_out = new_env.run_sequential(); //predicted output seq
+            let pred_out = new_env.run_sequential(flag_execution); //predicted output seq
             println!("Predicted classes:");
             print_results(pred_out);
         }
@@ -310,11 +310,11 @@ fn main() {
         println!("starting Network...");
         let new_env = OnnxRunningEnvironment::new(model_proto.clone(), input_tensor);
         if flag_execution==true {
-            let pred_out = new_env.run(); //predicted output par
+            let pred_out = new_env.run(flag_execution); //predicted output par
             println!("Predicted classes:");
             print_results(pred_out);
         }else{
-            let pred_out = new_env.run_sequential(); //predicted output seq
+            let pred_out = new_env.run_sequential(flag_execution); //predicted output seq
             println!("Predicted classes:");
             print_results(pred_out);
         }

@@ -88,7 +88,7 @@ impl OnnxRunningEnvironment {
             node_io_vec,
         }
     }
-    pub fn run(&self) -> TensorProto {
+    pub fn run(&self,flag_par: bool) -> TensorProto {
         let start = Instant::now();
         //Invio il tensore di input della rete sui sender di input
         self.input_senders.iter().for_each(|first_sender| {
@@ -112,7 +112,7 @@ impl OnnxRunningEnvironment {
                     } = current_node;
                     if let Some(receiver) = optional_receiver {
                         let inputs = get_inputs(receiver, node, initializers);
-                        let output_result = find_and_do_operation(node, initializers.clone(), inputs.clone());
+                        let output_result = find_and_do_operation(node, initializers.clone(), inputs.clone(),flag_par);
                         match output_result {
                             Ok(mut output_data) => {
                                 output_data.name = String::from(node.clone().output.first().unwrap());
@@ -141,7 +141,7 @@ impl OnnxRunningEnvironment {
         );
         result
     }
-    pub fn run_sequential(&self) -> TensorProto {
+    pub fn run_sequential(&self,flag_par: bool) -> TensorProto {
         // Capture the current time before running the model
         // model: &ModelProto, input_tensor: TensorProto
         let start = Instant::now();
@@ -180,7 +180,7 @@ impl OnnxRunningEnvironment {
                 .filter_map(|name| initializers_map.get(name).cloned())
                 .collect();
 
-            let output_tensor = find_and_do_operation(node, node_initializers,node_inputs).expect("Failed to run node");
+            let output_tensor = find_and_do_operation(node, node_initializers,node_inputs,flag_par).expect("Failed to run node");
     
             let output_name = output_tensor.name.to_string();
             // Store the output tensor so it can be used as input for subsequent nodes.
@@ -282,6 +282,7 @@ fn find_and_do_operation(
     node_for_op: &NodeProto,
     initializers: Vec<TensorProto>,
     inputs: Vec<TensorProto>,
+    flag: bool
 ) -> Result<TensorProto, OnnxError> {
     let str_op = node_for_op.op_type.to_uppercase();
     println!("Node: {} - Operation:{}", node_for_op.name, str_op);
@@ -293,20 +294,20 @@ fn find_and_do_operation(
     match str_op.as_str() {
         "ADD" => add(inputs, initializers, node_for_op),
         "RELU" => relu(inputs, node_for_op),
-        "EXP" => exp(inputs, node_for_op),
+        "EXP" => exp(inputs, node_for_op,flag),
         "CONCAT" => concat(&inputs, node_for_op), // use initializers ?
         "FLATTEN" => flatten(inputs, node_for_op),
         "RESHAPE" => reshape(inputs, initializers, node_for_op), //    input: ArrayViewD<f32>,shape: &Vec<isize>,allow_zero: i64,
-        "CONV" => conv(inputs, initializers, node_for_op),
-        "MAXPOOL" => maxpool(inputs, node_for_op),
-        "AVERAGEPOOL" => globalavgpool(inputs, node_for_op),
-        "BATCHNORMALIZATION" => batch_norm(inputs, initializers, node_for_op),
+        "CONV" => conv(inputs, initializers, node_for_op,flag),
+        "MAXPOOL" => maxpool(inputs, node_for_op,flag),
+        "AVERAGEPOOL" => globalavgpool(inputs, node_for_op,flag),
+        "BATCHNORMALIZATION" => batch_norm(inputs, initializers, node_for_op,flag),
         "DROPOUT" => dropout(inputs, initializers, node_for_op),
-        "SOFTMAX" => softmax(inputs, node_for_op),
-        "GEMM" => gemm(inputs, initializers, node_for_op),
-        "MATMUL" => matmul(inputs, initializers, node_for_op),
+        "SOFTMAX" => softmax(inputs, node_for_op,flag),
+        "GEMM" => gemm(inputs, initializers, node_for_op,flag),
+        "MATMUL" => matmul(inputs, initializers, node_for_op,flag),
         "REDUCESUM" => reducesum(inputs, node_for_op), 
-        "GLOBALAVERAGEPOOL" => globalavgpool(inputs, node_for_op),
+        "GLOBALAVERAGEPOOL" => globalavgpool(inputs, node_for_op,flag),
         "LRN" => lrn(inputs, node_for_op),
         _ => Err(OnnxError::UnsupportedOperation("Operazione non supportata".to_string())),
     }

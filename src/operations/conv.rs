@@ -3,9 +3,8 @@ use crate::{operations::utils::{
     get_string_attribute, pad_matrix_3d, stack_along_batch_dimension, tensor_proto_to_ndarray, }, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
 use num_traits::Float;
-
 use super::utils::Attribute;
-//use rayon::prelude::*;
+use rayon::prelude::*;
 
 pub type DataRepresentation<F> = Array3<F>;
 
@@ -379,12 +378,13 @@ fn determine_padding_and_input(
 /// # Example
 ///
 /// ```rust
-/// let convoluted_output = conv(&input_tensor, &filter_tensors, &node);
+/// let convoluted_output = conv(&input_tensor, &filter_tensors, &node,flag);
 /// ```
 pub fn conv(
     inputs: Vec<TensorProto>,
     initializers: Vec<TensorProto>,
     node: &NodeProto,
+    flag: bool,
 ) -> Result<TensorProto, OnnxError> {
     let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Extract the attributes from the node.
@@ -441,59 +441,117 @@ pub fn conv(
     let kernels_per_group = kernel.shape()[0] as i64 / group;
 
     // Parallelize the convolution operation for each input in the batch.
-    let result_list: Vec<_> = (0..batch_size)
-        .into_iter()
-        .map(|i| {
-            let current_input = &input[i];
-            let group_results: Vec<_> = (0..group)
-                .into_iter()
-                .map(|g| {
-                    let group_input = current_input
-                        .slice(s![
-                            (g * channels_per_group) as usize
-                                ..((g + 1) * channels_per_group) as usize,
-                            ..,
-                            ..
-                        ])
-                        .to_owned();
-
-                    let group_kernel = kernel
-                        .slice(s![
-                            (g * kernels_per_group) as usize
-                                ..((g + 1) * kernels_per_group) as usize,
-                            ..,
-                            ..,
-                            ..
-                        ])
-                        .to_owned();
-
-                    let group_bias = if let Some(ref bias) = bias_option {
-                        let bias_per_group = bias.shape()[0] as i64 / group;
-
-                        Some(
-                            bias.slice(s![
-                                (g * bias_per_group) as usize..((g + 1) * bias_per_group) as usize,
+    if flag==true{
+        let result_list: Vec<_> = (0..batch_size)
+            .into_par_iter()
+            .map(|i| {
+                let current_input = &input[i];
+                let group_results: Vec<_> = (0..group)
+                    .into_iter()
+                    .map(|g| {
+                        let group_input = current_input
+                            .slice(s![
+                                (g * channels_per_group) as usize
+                                    ..((g + 1) * channels_per_group) as usize,
+                                ..,
+                                ..
                             ])
-                            .to_owned(),
-                        )
-                    } else {
-                        None
-                    };
+                            .to_owned();
 
-                    ConvolutionLayer::new(group_kernel, group_bias, stride, padding_mode)
-                        .convolve(&group_input)
-                })
-                .collect();
+                        let group_kernel = kernel
+                            .slice(s![
+                                (g * kernels_per_group) as usize
+                                    ..((g + 1) * kernels_per_group) as usize,
+                                ..,
+                                ..,
+                                ..
+                            ])
+                            .to_owned();
 
-            // Convert each result into an ArrayView
-            let views: Vec<_> = group_results.iter().map(|arr| arr.view()).collect();
+                        let group_bias = if let Some(ref bias) = bias_option {
+                            let bias_per_group = bias.shape()[0] as i64 / group;
 
-            ndarray::concatenate(Axis(0), &views[..]).unwrap()
-        })
-        .collect();
+                            Some(
+                                bias.slice(s![
+                                    (g * bias_per_group) as usize..((g + 1) * bias_per_group) as usize,
+                                ])
+                                .to_owned(),
+                            )
+                        } else {
+                            None
+                        };
 
-    let result = stack_along_batch_dimension(result_list)?;
+                        ConvolutionLayer::new(group_kernel, group_bias, stride, padding_mode)
+                            .convolve(&group_input)
+                    })
+                    .collect();
 
-    // Convert the result to an output tensor and return.
-    convert_to_output_tensor(node, result)
+                // Convert each result into an ArrayView
+                let views: Vec<_> = group_results.iter().map(|arr| arr.view()).collect();
+
+                ndarray::concatenate(Axis(0), &views[..]).unwrap()
+            })
+            .collect();
+
+        let result = stack_along_batch_dimension(result_list)?;
+
+        // Convert the result to an output tensor and return.
+        convert_to_output_tensor(node, result)
+    }else{
+        let result_list: Vec<_> = (0..batch_size)
+            .into_iter()
+            .map(|i| {
+                let current_input = &input[i];
+                let group_results: Vec<_> = (0..group)
+                    .into_iter()
+                    .map(|g| {
+                        let group_input = current_input
+                            .slice(s![
+                                (g * channels_per_group) as usize
+                                    ..((g + 1) * channels_per_group) as usize,
+                                ..,
+                                ..
+                            ])
+                            .to_owned();
+
+                        let group_kernel = kernel
+                            .slice(s![
+                                (g * kernels_per_group) as usize
+                                    ..((g + 1) * kernels_per_group) as usize,
+                                ..,
+                                ..,
+                                ..
+                            ])
+                            .to_owned();
+
+                        let group_bias = if let Some(ref bias) = bias_option {
+                            let bias_per_group = bias.shape()[0] as i64 / group;
+
+                            Some(
+                                bias.slice(s![
+                                    (g * bias_per_group) as usize..((g + 1) * bias_per_group) as usize,
+                                ])
+                                .to_owned(),
+                            )
+                        } else {
+                            None
+                        };
+
+                        ConvolutionLayer::new(group_kernel, group_bias, stride, padding_mode)
+                            .convolve(&group_input)
+                    })
+                    .collect();
+
+                // Convert each result into an ArrayView
+                let views: Vec<_> = group_results.iter().map(|arr| arr.view()).collect();
+
+                ndarray::concatenate(Axis(0), &views[..]).unwrap()
+            })
+            .collect();
+
+        let result = stack_along_batch_dimension(result_list)?;
+
+        // Convert the result to an output tensor and return.
+        convert_to_output_tensor(node, result)
+    }
 }

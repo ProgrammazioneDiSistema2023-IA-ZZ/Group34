@@ -7,10 +7,12 @@ use crate::{
     OnnxError,
 };
 use ndarray::prelude::*;
+use rayon::prelude::*;
 pub fn batch_norm(
     input: Vec<TensorProto>,
     initializers: Vec<TensorProto>,
     node: &NodeProto,
+    flag:  bool,
 ) -> Result<TensorProto, OnnxError> {
     let input = input.get(0).unwrap(); //c'è solo un input
                                        // Estrai gli attributi del nodo.
@@ -44,7 +46,27 @@ pub fn batch_norm(
         .map_err(|_| OnnxError::ShapeMismatch("Failed to broadcast bias".into()))?;
 
     // Calcola la normalizzazione batch per ogni batch.
-    let result_list: Vec<_> = (0..batch_size)
+    if(flag==true){
+        let result_list : Vec<_> = (0..batch_size)
+            .into_par_iter()
+            .map(|i| {
+                let batch_data = x.index_axis(Axis(0), i);
+
+                // Normalizza il batch.
+                let normalized =
+                    (&batch_data - &broadcasted_mean) / (&broadcasted_var + epsilon).mapv(|v| v.sqrt());
+
+                // Applica scale e bias.
+                normalized * &broadcasted_scale + &broadcasted_bias
+            })
+            .collect();
+            // Combina i risultati lungo la dimensione del batch.
+            let result = stack_along_batch_dimension(result_list)?;
+
+            // Converte il risultato in formato TensorProto.
+            convert_to_output_tensor(node, result)
+    }else{
+        let result_list: Vec<_> = (0..batch_size)
         .into_iter()
         .map(|i| {
             let batch_data = x.index_axis(Axis(0), i);
@@ -57,10 +79,10 @@ pub fn batch_norm(
             normalized * &broadcasted_scale + &broadcasted_bias
         })
         .collect();
+        // Combina i risultati lungo la dimensione del batch.
+        let result = stack_along_batch_dimension(result_list)?;
 
-    // Combina i risultati lungo la dimensione del batch.
-    let result = stack_along_batch_dimension(result_list)?;
-
-    // Converte il risultato in formato TensorProto.
-    convert_to_output_tensor(node, result)
+        // Converte il risultato in formato TensorProto.
+        convert_to_output_tensor(node, result)
+    }
 }

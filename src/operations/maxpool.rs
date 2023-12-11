@@ -3,9 +3,10 @@ use crate::{operations::utils::{
     pad_matrix_2d, tensor_proto_to_ndarray,
 }, OnnxError, onnx::{TensorProto, NodeProto}};
 use ndarray::prelude::*;
+use rayon::prelude::*;
 // Funzione pubblica per implementare l'operazione di max pooling in un grafo ONNX.
 
-pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto,flag:  bool,) -> Result<TensorProto, OnnxError> {
     let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
@@ -24,7 +25,7 @@ pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto
     let inputs_nd_array = tensor_proto_to_ndarray::<f32>(&inputs)?;
 
     // Calcola il risultato del max pooling.
-    let result = pool(&inputs_nd_array, &kernel_shape, &pads, &strides)?;
+    let result = pool(&inputs_nd_array, &kernel_shape, &pads, &strides,flag)?;
 
     // Converti il risultato finale in TensorProto e restituisci.
     convert_to_output_tensor(node, result)
@@ -36,6 +37,7 @@ fn pool(
     kernel_shape: &Vec<i64>,
     pads: &Vec<i64>,
     strides: &Vec<i64>,
+    flag: bool,
 ) -> Result<ArrayD<f32>, OnnxError> {
     // Scegli gli indici delle dimensioni da estrarre.
     let batch_size = input_matrix.shape()[0];
@@ -70,32 +72,60 @@ fn pool(
             let output_rows = (padded_rows - kernel_height) / stride_height + 1;
             let output_cols = (padded_cols - kernel_width) / stride_width + 1;
 
-            // Parallelizza l'operazione di max pooling.
-            let pooled_matrix = (0..output_rows)
-                .into_iter()
-                .map(|i| {
-                    let mut row = Vec::with_capacity(output_cols);
+            // Parallelizza l'operazione di max pooling
+            if flag==true{
+                let pooled_matrix = (0..output_rows)
+                    .into_par_iter()
+                    .map(|i| {
+                        let mut row = Vec::with_capacity(output_cols);
 
-                    for j in 0..output_cols {
-                        let start_row = i * stride_height;
-                        let start_col = j * stride_width;
-                        let end_row = start_row + kernel_height;
-                        let end_col = start_col + kernel_width;
+                        for j in 0..output_cols {
+                            let start_row = i * stride_height;
+                            let start_col = j * stride_width;
+                            let end_row = start_row + kernel_height;
+                            let end_col = start_col + kernel_width;
 
-                        // Estrai la patch corrispondente dalla matrice con padding.
-                        let patch = padded_matrix.slice(s![start_row..end_row, start_col..end_col]);
+                            // Estrai la patch corrispondente dalla matrice con padding.
+                            let patch = padded_matrix.slice(s![start_row..end_row, start_col..end_col]);
 
-                        // Calcola il valore massimo all'interno della patch.
-                        let max_value = patch.fold(std::f32::NEG_INFINITY, |acc, &x| acc.max(x));
+                            // Calcola il valore massimo all'interno della patch.
+                            let max_value = patch.fold(std::f32::NEG_INFINITY, |acc, &x| acc.max(x));
 
-                        row.push(max_value);
-                    }
+                            row.push(max_value);
+                        }
 
-                    row
-                })
-                .collect::<Vec<_>>();
+                        row
+                    })
+                    .collect::<Vec<_>>();
 
-            pooled_results.push(pooled_matrix);
+                pooled_results.push(pooled_matrix);
+            }else{
+                    let pooled_matrix = (0..output_rows)
+                    .into_par_iter()
+                    .map(|i| {
+                        let mut row = Vec::with_capacity(output_cols);
+
+                        for j in 0..output_cols {
+                            let start_row = i * stride_height;
+                            let start_col = j * stride_width;
+                            let end_row = start_row + kernel_height;
+                            let end_col = start_col + kernel_width;
+
+                            // Estrai la patch corrispondente dalla matrice con padding.
+                            let patch = padded_matrix.slice(s![start_row..end_row, start_col..end_col]);
+
+                            // Calcola il valore massimo all'interno della patch.
+                            let max_value = patch.fold(std::f32::NEG_INFINITY, |acc, &x| acc.max(x));
+
+                            row.push(max_value);
+                        }
+
+                        row
+                    })
+                    .collect::<Vec<_>>();
+
+                pooled_results.push(pooled_matrix);
+            }
         }
     }
 

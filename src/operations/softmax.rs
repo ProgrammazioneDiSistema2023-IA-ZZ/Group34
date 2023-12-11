@@ -6,15 +6,15 @@ use crate::operations::utils::{
 };
 use crate::OnnxError;
 use ndarray::prelude::*;
-pub fn softmax(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
+pub fn softmax(input: Vec<TensorProto>, node: &NodeProto,flag:  bool) -> Result<TensorProto, OnnxError> {
     // Calcola l'esponenziale di ciascun elemento del tensore di input.
-    let exp_nd_array = tensor_proto_to_ndarray::<f32>(&exp(input.clone(), node)?).map_err(|_| {
+    let exp_nd_array = tensor_proto_to_ndarray::<f32>(&exp(input.clone(), node,flag)?).map_err(|_| {
         OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into())
     })?;
 
     // Calcola la somma degli elementi esponenziali.
     let reduce_nd_array =
-        tensor_proto_to_ndarray::<f32>(&reducesum(vec![exp(input, node)?], node)?).map_err(
+        tensor_proto_to_ndarray::<f32>(&reducesum(vec![exp(input, node,flag)?], node)?).map_err(
             |_| OnnxError::ConversionError("Failed to convert TensorProto to ndarray".into()),
         )?;
 

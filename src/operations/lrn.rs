@@ -3,6 +3,7 @@ use crate::{operations::utils::{
     tensor_proto_to_ndarray,
 }, onnx::{TensorProto, NodeProto}, OnnxError};
 use ndarray::prelude::*;
+use rayon::prelude::*;
 // Funzione pubblica per implementare l'operazione di "Local Response Normalization" (LRN) in un grafo ONNX.
 
 pub fn lrn(input: Vec<TensorProto>, node: &NodeProto) -> Result<TensorProto, OnnxError> {
