@@ -4,7 +4,6 @@ mod onnx {
 }
 use crate::onnx::*;
 use crate::onnx::NodeProto;
-use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
 use crate::operations::utils::ndarray_to_tensor_proto;
@@ -13,25 +12,19 @@ use crate::utils::CLASSES_NAMES;
 
 
 use std::collections::LinkedList;
-use image::GenericImage;
+use image::GenericImageView;
 use image::imageops;
 use ndarray::Array3;
-use ndarray::{Array, Array2, Array4, ArrayD, Axis, Dimension, IxDyn};
+use ndarray::{Array, Array2, Array4, ArrayD, Axis};
 use onnx::AttributeProto;
 use onnx::FunctionProto;
 use onnx::GraphProto;
 use onnx::OperatorSetIdProto;
 use onnx::StringStringEntryProto;
 use onnx::TrainingInfoProto;
-use onnx::tensor_proto::DataLocation;
 use onnx::ModelProto;
 use operations::utils::tensor_proto_to_ndarray;
-use rand::prelude::*;
-use image::{GenericImageView, DynamicImage};
 use tract_onnx::tract_core::tract_data::itertools::Itertools;
-use std::any::type_name;
-
-use std::fs::File;
 use std::io::{self, Read, Write};
 
 use std::process::exit;
@@ -54,7 +47,7 @@ fn main() {
     let mut flag_execution=true;
     loop {
         io::stdout().flush().unwrap();
-        println!("\nvuoi usare eseguire la sete in modo parallelo? (s/n) \n indicando 'n' sarà eseguita in modo sequenziale");
+        println!("\nvuoi usare eseguire la rete in modo parallelo? (s/n) \n indicando 'n' sarà eseguita in modo sequenziale");
         let mut choice4 = String::new();
         io::stdin()
             .read_line(&mut choice4)
@@ -596,7 +589,7 @@ fn print_results(tensor: TensorProto) {
         print!("|Class n:{} Value:{}| ", CLASSES_NAMES[element.0], element.1);
     }
 }
-
+/* 
 fn read_input(input: &str) {
     // Path to your .pb file da concatenare
     let file_path = input;
@@ -617,7 +610,7 @@ fn read_input(input: &str) {
 
     // If not preprocessing, proceed with model loading and inference
 }
-
+*/
 fn mobilenet_load_testset() -> &'static str {
     let path_testset = "src/models/mobilenet/data_mobilenet/input_0.pb";
     return path_testset;
@@ -632,7 +625,7 @@ fn mobilenet_load_output() -> &'static str {
     let path_output = "src/models/mobilenet/data_mobilenet/output_0.pb";
     return path_output;
 }
-
+/* 
 fn googlenet_load_testset() -> &'static str {
     let path_testset = "src/models/googlenet/data_googlenet/input_0.pb";
     return path_testset;
@@ -646,6 +639,7 @@ fn googlenet_load_output() -> &'static str {
     let path_output = "src/models/googlenet/data_googlenet/output_0.pb";
     return path_output;
 }
+*/
 fn resnet_load_testset() -> &'static str {
     let path_testset = "src/models/resnet/data_resnet/input_0.pb";
     return path_testset;
@@ -706,6 +700,7 @@ fn caffenet_load_output() -> &'static str {
     let path_output = "src/models/caffenet/data_caffenet/output_0.pb";
     return path_output;
 }
+/* 
 fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, new_height: u32) -> DynamicImage {
     // Resize the image
     let resized_image = image.resize_exact(new_width, new_height, image::imageops::FilterType::Lanczos3);
@@ -718,6 +713,7 @@ fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, ne
 
     final_image
 }
+*/
 fn convert_img(path: String) -> ArrayD<f32> {
     // Load the image
     let mut img = image::open(path).unwrap();
@@ -794,6 +790,7 @@ fn convert_img(path: String) -> ArrayD<f32> {
     arr_d
 }
 
+/* 
 struct Operation {
     op_type: OperationType,
     input: Vec<TensorProto>,
@@ -829,6 +826,7 @@ where
         _ => Err(OnnxError::new("Unsupported data type")),
     }
 }
+*/
 
 #[derive(Debug)]
 pub enum OnnxError {
@@ -895,7 +893,7 @@ impl TensorProto {
         ::std::default::Default::default()
     }
 }
-
+/* 
 enum OperationType {
     ADD,
     RELU,
@@ -940,4 +938,6 @@ where
             "Unsupported data type",
         )),
     }
+    
 }
+*/
