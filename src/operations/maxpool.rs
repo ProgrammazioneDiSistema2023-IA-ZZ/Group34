@@ -6,7 +6,7 @@ use ndarray::prelude::*;
 use rayon::prelude::*;
 // Funzione pubblica per implementare l'operazione di max pooling in un grafo ONNX.
 
-pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto,flag:  bool,) -> Result<TensorProto, OnnxError> {
+pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto,is_par_enabled:  bool,) -> Result<TensorProto, OnnxError> {
     let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
@@ -25,7 +25,7 @@ pub fn maxpool(inputs: Vec<TensorProto>, node: &NodeProto,flag:  bool,) -> Resul
     let inputs_nd_array = tensor_proto_to_ndarray::<f32>(&inputs)?;
 
     // Calcola il risultato del max pooling.
-    let result = pool(&inputs_nd_array, &kernel_shape, &pads, &strides,flag)?;
+    let result = pool(&inputs_nd_array, &kernel_shape, &pads, &strides,is_par_enabled)?;
 
     // Converti il risultato finale in TensorProto e restituisci.
     convert_to_output_tensor(node, result)
@@ -37,7 +37,7 @@ fn pool(
     kernel_shape: &Vec<i64>,
     pads: &Vec<i64>,
     strides: &Vec<i64>,
-    flag: bool,
+    is_par_enabled: bool,
 ) -> Result<ArrayD<f32>, OnnxError> {
     // Scegli gli indici delle dimensioni da estrarre.
     let batch_size = input_matrix.shape()[0];
@@ -73,7 +73,7 @@ fn pool(
             let output_cols = (padded_cols - kernel_width) / stride_width + 1;
 
             // Parallelizza l'operazione di max pooling
-            if flag==true{
+            if is_par_enabled==true{
                 let pooled_matrix = (0..output_rows)
                     .into_par_iter()
                     .map(|i| {
@@ -101,7 +101,7 @@ fn pool(
                 pooled_results.push(pooled_matrix);
             }else{
                     let pooled_matrix = (0..output_rows)
-                    .into_par_iter()
+                    .into_iter()
                     .map(|i| {
                         let mut row = Vec::with_capacity(output_cols);
 

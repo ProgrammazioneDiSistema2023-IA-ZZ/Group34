@@ -384,7 +384,7 @@ pub fn conv(
     inputs: Vec<TensorProto>,
     initializers: Vec<TensorProto>,
     node: &NodeProto,
-    flag: bool,
+    is_par_enabled: bool,
 ) -> Result<TensorProto, OnnxError> {
     let inputs = inputs.get(0).unwrap();//c'è solo un input
     // Extract the attributes from the node.
@@ -441,13 +441,13 @@ pub fn conv(
     let kernels_per_group = kernel.shape()[0] as i64 / group;
 
     // Parallelize the convolution operation for each input in the batch.
-    if flag==true{
+    if is_par_enabled {
         let result_list: Vec<_> = (0..batch_size)
             .into_par_iter()
             .map(|i| {
                 let current_input = &input[i];
                 let group_results: Vec<_> = (0..group)
-                    .into_iter()
+                    .into_par_iter()
                     .map(|g| {
                         let group_input = current_input
                             .slice(s![
