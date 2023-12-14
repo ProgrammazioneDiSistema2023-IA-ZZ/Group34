@@ -1,9 +1,31 @@
-use rand::{Rng, thread_rng};
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
+use image::{imageops, GenericImageView};
+use ndarray::{ArrayD, Array2, Array3, Array4, Array, Axis};
+use rand::{thread_rng, Rng};
 
-pub fn get_random_float_tensor(dims: Vec<i64>) -> TensorProto{
+const MIN: u32 = 256;
+const CROP: u32 = 224;
+// valori standard utilizzati
+const MEAN: [f32; 3] = [0.485, 0.456, 0.406];
+const STD: [f32; 3] = [0.229, 0.224, 0.225];
+const SCALEFACTOR: f32 = 255.0;
 
+pub fn write_message<M: prost::Message>(message: &M, path: &str) -> std::io::Result<usize> {
+    let mut buf: Vec<u8> = Vec::new();
+    buf.reserve(message.encoded_len());
+    message.encode(&mut buf).unwrap();
+    std::fs::write(path, &*buf)?;
+    Ok(buf.len())
+}
+
+pub fn decode_message<M: prost::Message + std::default::Default>(path: &str) -> M {
+    let data = std::fs::read(path).expect("Failed to read ProtoBuf file");
+    prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data")
+}
+
+#[allow(dead_code)]
+pub fn get_random_float_tensor(dims: Vec<i64>) -> TensorProto {
     // Generate random data
     let mut rng = thread_rng();
     let data: Vec<f32> = (0..dims.iter().product::<i64>())
@@ -12,12 +34,90 @@ pub fn get_random_float_tensor(dims: Vec<i64>) -> TensorProto{
 
     // Create a new TensorProto and set its properties
     let mut tensor_proto = TensorProto::default();
-    tensor_proto.dims=dims.clone(); // Adjust the data type as needed
+    tensor_proto.dims = dims.clone(); // Adjust the data type as needed
     tensor_proto.data_type = DataType::Float as i32;
     tensor_proto.float_data = data.to_vec();
     tensor_proto.name = String::from("data");
     tensor_proto
 }
+
+pub fn convert_img(path: String) -> ArrayD<f32> {
+    // Load the image
+    let mut img = image::open(path).unwrap();
+
+    let (width, height) = img.dimensions();
+
+    // faccio il resize a min
+    let (nwidth, nheight) = if width > height {
+        (MIN * width / height, MIN)
+    } else {
+        (MIN, MIN * height / width)
+    };
+
+    img = img.resize(nwidth, nheight, imageops::FilterType::Gaussian);
+
+    // Crop the image to CROP_SIZE from the center
+    let crop_x = (nwidth - CROP) / 2;
+    let crop_y = (nheight - CROP) / 2;
+
+    img = img.crop_imm(crop_x, crop_y, CROP, CROP); // faccio crop a 224 come voglio input
+
+    //trasformo in rgb e poi trasformo in ndarray per utilizzarlo
+    let img_rgb = img.to_rgb8();
+
+    let raw_data = img_rgb.into_raw();
+
+    let (mut rs, mut gs, mut bs) = (Vec::new(), Vec::new(), Vec::new());
+
+    for i in 0..raw_data.len() / 3 {
+        rs.push(raw_data[3 * i]);
+        gs.push(raw_data[3 * i + 1]);
+        bs.push(raw_data[3 * i + 2]);
+    }
+
+    let r_arr: Array2<u8> = Array::from_shape_vec((CROP as usize, CROP as usize), rs).unwrap();
+    let g_arr: Array2<u8> = Array::from_shape_vec((CROP as usize, CROP as usize), gs).unwrap();
+    let b_arr: Array2<u8> = Array::from_shape_vec((CROP as usize, CROP as usize), bs).unwrap();
+    //creo Array3
+    let mut arr_fin: Array3<u8> =
+        ndarray::stack(Axis(2), &[r_arr.view(), g_arr.view(), b_arr.view()]).unwrap();
+    //faccio trasposta
+    arr_fin.swap_axes(0, 2);
+
+    let mean = Array::from_shape_vec(
+        (3, 1, 1),
+        vec![
+            MEAN[0] * SCALEFACTOR,
+            MEAN[1] * SCALEFACTOR,
+            MEAN[2] * SCALEFACTOR,
+        ],
+    )
+    .unwrap();
+
+    let std = Array::from_shape_vec(
+        (3, 1, 1),
+        vec![
+            STD[0] * SCALEFACTOR,
+            STD[1] * SCALEFACTOR,
+            STD[2] * SCALEFACTOR,
+        ],
+    )
+    .unwrap();
+
+    let mut arr_f: Array3<f32> = arr_fin.mapv(|x| x as f32);
+
+    arr_f -= &mean;
+    arr_f /= &std;
+
+    //aggiungo la batch dim
+    let arr_f_batch: Array4<f32> = arr_f.insert_axis(Axis(0));
+
+    // Convert Array4 to ArrayD
+    let arr_d: ArrayD<f32> = arr_f_batch.into_dimensionality().unwrap();
+
+    arr_d
+}
+
 //classi prese da imagenet
 pub const CLASSES_NAMES: [&str; 1000] = [
     "tench, Tinca tinca",

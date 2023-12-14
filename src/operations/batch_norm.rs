@@ -12,7 +12,7 @@ pub fn batch_norm(
     input: Vec<TensorProto>,
     initializers: Vec<TensorProto>,
     node: &NodeProto,
-    flag:  bool,
+    is_par_enabled:  bool,
 ) -> Result<TensorProto, OnnxError> {
     let input = input.get(0).unwrap(); //c'è solo un input
                                        // Estrai gli attributi del nodo.
@@ -46,7 +46,7 @@ pub fn batch_norm(
         .map_err(|_| OnnxError::ShapeMismatch("Failed to broadcast bias".into()))?;
 
     // Calcola la normalizzazione batch per ogni batch.
-    if(flag==true){
+    if is_par_enabled {
         let result_list : Vec<_> = (0..batch_size)
             .into_par_iter()
             .map(|i| {
