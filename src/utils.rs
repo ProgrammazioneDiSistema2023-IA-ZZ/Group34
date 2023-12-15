@@ -1,7 +1,7 @@
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use image::{imageops, GenericImageView};
-use ndarray::{ArrayD, Array2, Array3, Array4, Array, Axis};
+use ndarray::{Array, Array2, Array3, Array4, ArrayD, Axis};
 use rand::{thread_rng, Rng};
 
 const MIN: u32 = 256;
@@ -10,6 +10,10 @@ const CROP: u32 = 224;
 const MEAN: [f32; 3] = [0.485, 0.456, 0.406];
 const STD: [f32; 3] = [0.229, 0.224, 0.225];
 const SCALEFACTOR: f32 = 255.0;
+
+//path of models
+pub const MODEL_PATHS_ENDINGS: [&'static str; 5] =
+    ["mobilenet", "resnet", "squeezenet", "caffenet", "alexnet"];
 
 pub fn write_message<M: prost::Message>(message: &M, path: &str) -> std::io::Result<usize> {
     let mut buf: Vec<u8> = Vec::new();
@@ -116,6 +120,39 @@ pub fn convert_img(path: String) -> ArrayD<f32> {
     let arr_d: ArrayD<f32> = arr_f_batch.into_dimensionality().unwrap();
 
     arr_d
+}
+
+
+pub struct ModelPats {
+    pub model: String,
+    pub test: String,
+    pub output: String,
+    pub model_name: String
+}
+impl ModelPats {
+    pub fn new(model: String, test: String, output: String, model_name: String) -> Self {
+        Self {
+            model,
+            test,
+            output,
+            model_name
+        }
+    }
+}
+
+//seleziona i path del modello dato in input un valore tra 1 e 5
+pub fn get_path_from_ordinal(ordinal: usize) -> Option<ModelPats> {
+    if ordinal == 0 || ordinal > 5 {
+        return None;
+    }
+    let index = ordinal - 1;
+    let ending = MODEL_PATHS_ENDINGS[index];
+    Some(ModelPats::new(
+        format!("src/models/{ending}/model.onnx"),
+        format!("src/models/{ending}/data_{ending}/input_0.pb"),
+        format!("src/models/{ending}/data_{ending}/output_0.pb"),
+        ending.to_string()
+    ))
 }
 
 //classi prese da imagenet

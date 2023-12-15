@@ -277,15 +277,15 @@ impl OnnxRunningEnvironment {
 }
 
 pub struct OnnxModelEditor {
-    model: ModelProto,
+    pub model: ModelProto,
 }
 
 impl OnnxModelEditor {
-    fn new(model: ModelProto) -> Self {
+    pub fn new(model: ModelProto) -> Self {
         Self { model }
     }
 
-    fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
+    pub fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
         let mut node_map: LinkedList<NodeProto> = LinkedList::new();
         for node in model.clone().graph.unwrap().node {
             // inserisco nella mappa nodi con chiave nome
@@ -325,11 +325,10 @@ impl OnnxModelEditor {
         return model_new;
     }
 
-    fn insert_node(
+    pub fn insert_node(
+        self,
         node_name: String,
-        model: ModelProto,
         input: Vec<String>,
-        _initializers: Vec<String>,
         output: Vec<String>,
         operation_type: String,
         domain: String,
@@ -337,8 +336,9 @@ impl OnnxModelEditor {
         doc_string: String,
         node_before: Option<NodeProto>, // uso questi parametri per inserire il nodo in una pos specifica
         node_after: Option<NodeProto>, // possono essere entrambi none se per esempio è il primo nodo
-    ) -> ModelProto {
-        let mut node_map: LinkedList<NodeProto> = LinkedList::new();
+    ) -> Self {
+        let mut model = self.model;
+        let mut node_map: LinkedList<&NodeProto> = LinkedList::new();
         let node_to_insert = NodeProto::new(
             input,
             output,
@@ -348,45 +348,44 @@ impl OnnxModelEditor {
             attribute,
             doc_string,
         );
-        let mut before: Option<NodeProto> = None;
-        for node in model.clone().graph.unwrap().node {
-            if node.name == node_after.clone().unwrap().name
-                || node.name == node_before.clone().unwrap().name
+        let mut before: Option<&NodeProto> = None;
+        for node in &model.graph.unwrap().node {
+            if node.name == node_after.unwrap().name
+                || node.name == node_before.unwrap().name
             {
                 //controllo se il nome del nodo successivo è uguale
-                if before.clone().unwrap().name == node_before.clone().unwrap().name
-                    || before.clone().is_none() == node_before.clone().is_none()
+                if before.is_none() == node_before.is_none() || before.unwrap().name == node_before.unwrap().name
                 {
                     // se anche il nome del nodo precedente corrisponde
                     // inserisco il nuovo nodo nella posizione specificata
-                    node_map.push_back(node_to_insert.clone());
+                    node_map.push_back(&node_to_insert);
                 }
             } else {
-                node_map.push_back(node.clone());
+                node_map.push_back(node);
             }
             // salvo il nodo precedente
-            before = Some(node.clone());
+            before = Some(node);
         }
         // se il nodo che voglio inserire è l'ultimo non avra un successivo quindi ho salvato
         // uscendo dal for before come ultimo nodo della rete quindi vado a fare push
-        if before.clone().unwrap().name == node_before.clone().unwrap().name
-            && node_before.clone().is_none()
+        if before.unwrap().name == node_before.unwrap().name
+            && node_before.is_none()
         {
             // se anche il nome del nodo precedente corrisponde
             // inserisco il nuovo nodo nella posizione specificata
             // in questo caso sarà l'ultimo nodo
-            node_map.push_back(node_to_insert.clone());
+            node_map.push_back(& node_to_insert);
         }
         let graph = GraphProto {
-            node: node_map.into_iter().collect(),
-            name: model.clone().graph.unwrap().name,
-            initializer: model.clone().graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
-            sparse_initializer: model.clone().graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
-            doc_string: model.clone().graph.unwrap().doc_string,
-            input: model.clone().graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
-            output: model.clone().graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
-            value_info: model.clone().graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
-            quantization_annotation: model.clone().graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
+            node: node_map.into_iter().map(|x| *x ).collect(),
+            name: model.graph.unwrap().name,
+            initializer: model.graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
+            sparse_initializer: model.graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
+            doc_string: model.graph.unwrap().doc_string,
+            input: model.graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
+            output: model.graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
+            value_info: model.graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
+            quantization_annotation: model.graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
         };
         let model_new = ModelProto {
             ir_version: model.ir_version,
@@ -401,9 +400,10 @@ impl OnnxModelEditor {
             training_info: model.training_info,
             functions: model.functions,
         };
-        return model_new;
+        return Self::new(model_new);
     }
-    fn modify_node(
+    
+    pub fn modify_node(
         node_name: String,
         model: ModelProto,
         input: Vec<String>,
@@ -459,17 +459,6 @@ impl OnnxModelEditor {
             functions: model.functions,         // Aggiungere eventuali funzioni locali
         };
         return model_new;
-    }
-    pub fn new_node_proto() -> NodeProto {
-        NodeProto::new(
-            Vec::new(),
-            Vec::new(),
-            String::new(),
-            String::new(),
-            String::new(),
-            Vec::new(), // Assicurati di avere la definizione corretta di AttributeProto
-            String::new(),
-        )
     }
 }
 

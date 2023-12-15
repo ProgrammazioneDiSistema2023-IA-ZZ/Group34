@@ -11,6 +11,7 @@ use crate::operations::utils::ndarray_to_tensor_proto;
 use crate::utils::convert_img;
 use crate::utils::decode_message;
 use crate::utils::CLASSES_NAMES;
+use crate::utils::get_path_from_ordinal;
 
 use image::imageops;
 use image::GenericImageView;
@@ -33,10 +34,7 @@ use std::process::exit;
 mod onnx_running_environment;
 mod operations;
 mod utils;
-
-//path of models
-const MODEL_PATHS_ENDINGS: [&'static str; 5] =
-    ["mobilenet", "resnet", "squeezenet", "caffenet", "alexnet"];
+mod stateful_backend_environment;
 
 //legge da console un valore di risposa a una s/n function
 fn get_bool_from_console(prompt: &str) -> bool {
@@ -110,7 +108,7 @@ fn main() {
             6,
         );
 
-        let path = get_path_from_index(model_index as usize);
+        let path = get_path_from_ordinal(model_index as usize);
         if path.is_none() {
             print!("A presto :)");
             return;
@@ -156,34 +154,6 @@ fn main() {
             print_results(output_tensor);
         }
     }
-}
-
-struct ModelPats {
-    model: String,
-    test: String,
-    output: String,
-}
-impl ModelPats {
-    fn new(model: String, test: String, output: String) -> Self {
-        Self {
-            model,
-            test,
-            output,
-        }
-    }
-}
-
-fn get_path_from_index(index: usize) -> Option<ModelPats> {
-    if index == 0 || index > 5 {
-        return None;
-    }
-    let index = index - 1;
-    let ending = MODEL_PATHS_ENDINGS[index];
-    Some(ModelPats::new(
-        format!("src/models/{ending}/model.onnx"),
-        format!("src/models/{ending}/data_{ending}/input_0.pb"),
-        format!("src/models/{ending}/data_{ending}/output_0.pb"),
-    ))
 }
 
 fn print_results(tensor: TensorProto) {
