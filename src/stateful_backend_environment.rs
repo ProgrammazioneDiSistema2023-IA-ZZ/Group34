@@ -7,12 +7,12 @@ use crate::{
 use protobuf::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
-use tract_onnx::model;
 use std::{
     fs::{self, File, OpenOptions},
     io::{Read, Write},
     path::Path,
 };
+use tract_onnx::model;
 
 struct StatefulPaths {
     folder: &'static str,
@@ -112,7 +112,7 @@ pub fn create_node(
     name_node_before: String,
     name_node_after: String,
 ) -> ModelProto {
-    let editor = OnnxModelEditor::new(get_model());
+    let model = get_model();
 
     let mut attributes_proto = Vec::new();
     for attr in attributes {
@@ -124,26 +124,45 @@ pub fn create_node(
         attrbute_proto.name = attribute_name;
         attrbute_proto.r#type = attribute_type as i32;
         match attribute_type {
-            attribute_proto::AttributeType::Float => {attrbute_proto.f = attribute_value.parse().unwrap()},
-            attribute_proto::AttributeType::Int => {attrbute_proto.i = attribute_value.parse().unwrap()},
-            attribute_proto::AttributeType::String => {attrbute_proto.s = attribute_value.into_bytes()},
+            attribute_proto::AttributeType::Float => {
+                attrbute_proto.f = attribute_value.parse().unwrap()
+            }
+            attribute_proto::AttributeType::Int => {
+                attrbute_proto.i = attribute_value.parse().unwrap()
+            }
+            attribute_proto::AttributeType::String => {
+                attrbute_proto.s = attribute_value.into_bytes()
+            }
             _ => {}
         }
 
         attributes_proto.push(attrbute_proto)
     }
 
-    editor
-        .insert_node(
-            node_name,
-            input,
-            output,
-            operation_type,
-            domain,
-            attributes_proto,
-            doc_string,
-            editor.model.clone().graph.unwrap().node.iter().find(|x| x.name == name_node_before).map(|x| x.clone()),
-            editor.model.clone().graph.unwrap().node.iter().find(|x| x.name == name_node_after).map(|x| x.clone()),
-        )
-        .model
+    OnnxModelEditor::insert_node(
+        node_name,
+        input,
+        output,
+        operation_type,
+        domain,
+        attributes_proto,
+        doc_string,
+        model
+            .graph
+            .as_ref()
+            .unwrap()
+            .node
+            .iter()
+            .find(|x| x.name == name_node_before)
+            .map(|x| x.clone()),
+        model
+            .graph
+            .as_ref()
+            .unwrap()
+            .node
+            .iter()
+            .find(|x| x.name == name_node_after)
+            .map(|x| x.clone()),
+        model
+    )
 }

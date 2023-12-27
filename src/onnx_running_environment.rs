@@ -277,14 +277,9 @@ impl OnnxRunningEnvironment {
 }
 
 pub struct OnnxModelEditor {
-    pub model: ModelProto,
 }
 
 impl OnnxModelEditor {
-    pub fn new(model: ModelProto) -> Self {
-        Self { model }
-    }
-
     pub fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
         let mut node_map: LinkedList<NodeProto> = LinkedList::new();
         for node in model.clone().graph.unwrap().node {
@@ -326,7 +321,6 @@ impl OnnxModelEditor {
     }
 
     pub fn insert_node(
-        self,
         node_name: String,
         input: Vec<String>,
         output: Vec<String>,
@@ -336,8 +330,8 @@ impl OnnxModelEditor {
         doc_string: String,
         node_before: Option<NodeProto>, // uso questi parametri per inserire il nodo in una pos specifica
         node_after: Option<NodeProto>, // possono essere entrambi none se per esempio è il primo nodo
-    ) -> Self {
-        let mut model = self.model;
+        model: ModelProto
+    ) -> ModelProto {
         let mut node_map: LinkedList<&NodeProto> = LinkedList::new();
         let node_to_insert = NodeProto::new(
             input,
@@ -349,12 +343,12 @@ impl OnnxModelEditor {
             doc_string,
         );
         let mut before: Option<&NodeProto> = None;
-        for node in &model.graph.unwrap().node {
-            if node.name == node_after.unwrap().name
-                || node.name == node_before.unwrap().name
+        for node in &model.graph.as_ref().unwrap().node {
+            if node.name == node_after.as_ref().unwrap().name
+                || node.name == node_before.as_ref().unwrap().name
             {
                 //controllo se il nome del nodo successivo è uguale
-                if before.is_none() == node_before.is_none() || before.unwrap().name == node_before.unwrap().name
+                if before.is_none() == node_before.is_none() || before.unwrap().name == node_before.as_ref().unwrap().name
                 {
                     // se anche il nome del nodo precedente corrisponde
                     // inserisco il nuovo nodo nella posizione specificata
@@ -368,39 +362,44 @@ impl OnnxModelEditor {
         }
         // se il nodo che voglio inserire è l'ultimo non avra un successivo quindi ho salvato
         // uscendo dal for before come ultimo nodo della rete quindi vado a fare push
-        if before.unwrap().name == node_before.unwrap().name
+        if before.unwrap().name == node_before.as_ref().unwrap().name
             && node_before.is_none()
         {
             // se anche il nome del nodo precedente corrisponde
             // inserisco il nuovo nodo nella posizione specificata
             // in questo caso sarà l'ultimo nodo
-            node_map.push_back(& node_to_insert);
+            node_map.push_back(&node_to_insert);
         }
-        let graph = GraphProto {
-            node: node_map.into_iter().map(|x| *x ).collect(),
-            name: model.graph.unwrap().name,
-            initializer: model.graph.unwrap().initializer, // Aggiungere eventuali inizializzatori
-            sparse_initializer: model.graph.unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
-            doc_string: model.graph.unwrap().doc_string,
-            input: model.graph.unwrap().input, // Aggiungere eventuali informazioni sugli input
-            output: model.graph.unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
-            value_info: model.graph.unwrap().value_info, // Aggiungere eventuali informazioni sui valori
-            quantization_annotation: model.graph.unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
-        };
-        let model_new = ModelProto {
-            ir_version: model.ir_version,
-            opset_import: model.opset_import,
-            producer_name: model.producer_name,
-            producer_version: model.producer_version,
-            domain: model.domain,
-            model_version: model.model_version,
-            doc_string: model.doc_string,
-            graph: Some(graph),
-            metadata_props: model.metadata_props,
-            training_info: model.training_info,
-            functions: model.functions,
-        };
-        return Self::new(model_new);
+        let mut model_new = model.clone();
+        let mut graph = model_new.graph.unwrap();
+        graph.node = node_map.into_iter().map(|x| x.clone() ).collect();
+        model_new.graph = Some(graph);
+
+        // let graph = GraphProto {
+        //     node: node_map.into_iter().map(|x| *x ).collect(),
+        //     name: model.graph.as_ref().unwrap().name,
+        //     initializer: model.graph.as_ref().unwrap().initializer, // Aggiungere eventuali inizializzatori
+        //     sparse_initializer: model.graph.as_ref().unwrap().sparse_initializer, // Aggiungere eventuali inizializzatori sparsi
+        //     doc_string: model.graph.as_ref().unwrap().doc_string,
+        //     input: model.graph.as_ref().unwrap().input, // Aggiungere eventuali informazioni sugli input
+        //     output: model.graph.as_ref().unwrap().output, // Aggiungere eventuali informazioninformazioni sugli output
+        //     value_info: model.graph.as_ref().unwrap().value_info, // Aggiungere eventuali informazioni sui valori
+        //     quantization_annotation: model.graph.as_ref().unwrap().quantization_annotation, // Aggiungere eventuali annotazioni di quantizzazione
+        // };
+        // let model_new = ModelProto {
+        //     ir_version: model.ir_version,
+        //     opset_import: model.opset_import,
+        //     producer_name: model.producer_name,
+        //     producer_version: model.producer_version,
+        //     domain: model.domain,
+        //     model_version: model.model_version,
+        //     doc_string: model.doc_string,
+        //     graph: Some(graph),
+        //     metadata_props: model.metadata_props,
+        //     training_info: model.training_info,
+        //     functions: model.functions,
+        // };
+        return model_new;
     }
     
     pub fn modify_node(
