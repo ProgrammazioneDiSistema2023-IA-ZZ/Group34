@@ -20,3 +20,4 @@ Cargo.lock
 
 /backend/node_modules
 /backend/index.node
+/backend/src/models

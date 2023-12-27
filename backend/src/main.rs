@@ -2,228 +2,176 @@
 mod onnx {
     include!("onnx.rs");
 }
-
-use crate::onnx::tensor_proto::DataType;
+use crate::onnx::NodeProto;
 use crate::onnx::TensorProto;
+use crate::onnx::*;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
-use core::fmt;
-use ndarray::{arr2, s, Array, Array2, Array4, ArrayD, ArrayView, Axis, Dimension, IxDyn, Zip};
-use onnx::tensor_proto::DataLocation;
-use onnx::ModelProto;
-use operations::utils::tensor_proto_to_ndarray;
-use rand::prelude::*;
-use std::any::type_name;
-use std::error::Error;
-use std::fs::File;
-use std::io::{self, ErrorKind, Read, Write};
-use std::ops::Index;
-use std::process::exit;
-use tract_onnx::pb::AttributeProto;
-use tract_onnx::prelude::tract_itertools::Itertools;
+use crate::operations::utils::ndarray_to_tensor_proto;
 
+use crate::utils::convert_img;
+use crate::utils::decode_message;
+use crate::utils::CLASSES_NAMES;
+use crate::utils::get_path_from_ordinal;
+
+use image::imageops;
+use image::GenericImageView;
+use ndarray::Array3;
+use ndarray::{Array, Array2, Array4, ArrayD, Axis};
+use onnx::AttributeProto;
+use onnx::FunctionProto;
+use onnx::GraphProto;
+use onnx::ModelProto;
+use onnx::OperatorSetIdProto;
+use onnx::StringStringEntryProto;
+use onnx::TrainingInfoProto;
+use operations::utils::tensor_proto_to_ndarray;
+use std::collections::btree_map::Range;
+use std::collections::LinkedList;
+use std::io::{self, Read, Write};
+use tract_onnx::tract_core::tract_data::itertools::Itertools;
+
+use std::process::exit;
 mod onnx_running_environment;
 mod operations;
 mod utils;
+mod stateful_backend_environment;
 
-fn main() {
-    let mut path_model: &str = "";
-    let mut path_testset: &str = "";
-    let mut path_output: &str = "";
+//legge da console un valore di risposa a una s/n function
+fn get_bool_from_console(prompt: &str) -> bool {
     loop {
-        println!("Onnx runtime");
-        println!("scegli una rete:");
-        println!("1. mobilenet");
-        println!("2. resnet");
-        println!("3. squeezenet");
-        println!("4. googlenet");
-        println!("5. fine");
-
-        print!("Seleziona un'opzione: ");
         io::stdout().flush().unwrap();
-
-        let mut choice = String::new();
+        println!("{prompt}");
+        let mut choice: String = String::new();
         io::stdin()
             .read_line(&mut choice)
             .expect("Errore durante la lettura dell'input");
-
         // Rimuovi spazi e caratteri di nuova linea dall'input
         let choice = choice.trim();
         match choice {
-            "1" => {
-                path_model = &mobilenet_load();
-                loop {
-                    io::stdout().flush().unwrap();
-                    println!("vuoi usare il test set di default ? (s/n)");
-                    let mut choice2 = String::new();
-                    io::stdin()
-                        .read_line(&mut choice2)
-                        .expect("Errore durante la lettura dell'input");
-                    // Rimuovi spazi e caratteri di nuova linea dall'input
-                    let choice2 = choice2.trim();
-                    match choice2 {
-                        "s" => {
-                            path_testset = &mobilenet_load_testset();
-                            path_output = &mobilenet_load_output();
-                            break;
-                        }
-                        "n" => {
-                            println!("implementare come inserire un test set diverso");
-                            break;
-                        }
-                        _ => println!("Scelta non valida. Riprova."),
-                    }
-                }
-                break;
-            }
-            "2" => {
-                path_model = &resnet_load();
-                loop {
-                    io::stdout().flush().unwrap();
-                    println!("vuoi usare il test set di default ? (s/n)");
-                    let mut choice2 = String::new();
-                    io::stdin()
-                        .read_line(&mut choice2)
-                        .expect("Errore durante la lettura dell'input");
-                    // Rimuovi spazi e caratteri di nuova linea dall'input
-                    let choice2 = choice2.trim();
-                    match choice2 {
-                        "s" => {
-                            path_testset = &resnet_load_testset();
-                            path_output = &resnet_load_output();
-                            break;
-                        }
-                        "n" => {
-                            println!("implementare come inserire un test set diverso");
-                            break;
-                        }
-                        _ => println!("Scelta non valida. Riprova."),
-                    }
-                }
-                break;
-            }
-            "3" => {
-                path_model = &squeezenet_load();
-                loop {
-                    io::stdout().flush().unwrap();
-                    println!("vuoi usare il test set di default ? (s/n)");
-                    let mut choice2 = String::new();
-                    io::stdin()
-                        .read_line(&mut choice2)
-                        .expect("Errore durante la lettura dell'input");
-                    // Rimuovi spazi e caratteri di nuova linea dall'input
-                    let choice2 = choice2.trim();
-                    match choice2 {
-                        "s" => {
-                            path_testset = &squeezenet_load_testset();
-                            path_output = &squeezenet_load_output();
-                            break;
-                        }
-                        "n" => {
-                            println!("implementare come inserire un test set diverso");
-                            break;
-                        }
-                        _ => println!("Scelta non valida. Riprova."),
-                    }
-                }
-                break;
-            }
-            "4" => {
-                path_model = &googlenet_load();
-                loop {
-                    io::stdout().flush().unwrap();
-                    println!("vuoi usare il test set di default ? (s/n)");
-                    let mut choice2 = String::new();
-                    io::stdin()
-                        .read_line(&mut choice2)
-                        .expect("Errore durante la lettura dell'input");
-                    // Rimuovi spazi e caratteri di nuova linea dall'input
-                    let choice2 = choice2.trim();
-                    match choice2 {
-                        "s" => {
-                            path_testset = &googlenet_load_testset();
-                            path_output = &googlenet_load_output();
-                            break;
-                        }
-                        "n" => {
-                            println!("implementare come inserire un test set diverso");
-                            break;
-                        }
-                        _ => println!("Scelta non valida. Riprova."),
-                    }
-                }
-                break;
-            }
-            "5" => {
-                println!("Uscita dal programma");
-                break;
-            }
+            "s" => return true,
+            "n" => return false,
             _ => println!("Scelta non valida. Riprova."),
         }
     }
-    // Load and parse your ProtoBuf file (e.g., "squeezenet.onnx")
-    //let data = std::fs::read("src/squeezenet.onnx").expect("Failed to read ProtoBuf file");
-    if path_model.is_empty() || path_testset.is_empty() {
-        exit(1)
+}
+
+fn get_int_from_console(prompt: &str, min: i32, max: i32) -> i32 {
+    loop {
+        io::stdout().flush().unwrap();
+        println!("{prompt}");
+        let mut choice: String = String::new();
+        io::stdin()
+            .read_line(&mut choice)
+            .expect("Errore durante la lettura dell'input");
+        // Rimuovi spazi e caratteri di nuova linea dall'input
+        let choice = choice.trim();
+        let value: i32 = choice.to_string().parse().unwrap_or(min - 1);
+        if value < min || value > max {
+            println!("Scelta non valida. Riprova.")
+        } else {
+            return value;
+        };
     }
-    let data = std::fs::read(path_model).expect("Failed to read ProtoBuf file");
-    let model_proto: ModelProto =
-        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+}
 
-    println!("Reading the inputs ...");
-    let data = std::fs::read(path_testset).expect("Failed to read ProtoBuf file");
-    let input_tensor: TensorProto =
-        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
+fn get_string_from_console(prompt: &str) -> String {
+    io::stdout().flush().unwrap();
+    println!("{prompt}");
+    let mut choice: String = String::new();
+    io::stdin()
+        .read_line(&mut choice)
+        .expect("Errore durante la lettura dell'input");
+    // Rimuovi spazi e caratteri di nuova linea dall'input
+    let choice = choice.trim();
+    choice.to_string()
+}
 
-    println!("starting Network...");
-    let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
+fn main() {
+    loop {
+        println!("
+        ————————————————————————————————————————————————————
+                                ONNX
+        ————————————————————————————————————————————————————
+        ");
 
-    let pred_out = new_env.run(); //predicted output
+        let is_run_par_enabled = get_bool_from_console("\nvuoi eseguire la rete in modo parallelo? (s/n) \n indicando 'n' sarà eseguita in modo sequenziale");
 
-    let data = std::fs::read(path_output).expect("Failed to read ProtoBuf file");
-    let output_tensor: TensorProto =
-        prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data");
-    
-    println!("Predicted classes:");
-    print_results(pred_out);
-    println!("Ground truth classes:");
-    print_results(output_tensor);
-    
+        let model_index = get_int_from_console(
+            "scegli una rete:
+        1. mobilenet
+        2. resnet
+        3. squeezenet
+        4. caffenet
+        5. alexnet
+        6. fine",
+            1,
+            6,
+        );
 
+        let path = get_path_from_ordinal(model_index as usize);
+        if path.is_none() {
+            print!("A presto :)");
+            return;
+        };
+        let path = path.unwrap();
+
+        let is_def_test_set = get_bool_from_console("\nvuoi usare il test set di default ? (s/n)");
+
+        let mut use_custom_img = false;
+        let mut path_img = "".to_string();
+        if !is_def_test_set {
+            path_img = get_string_from_console("inserire il path dell'immagine che si vuole utilizzare\nl'immagine va inserita in src/nomeimmagine");
+            use_custom_img = true
+        }
+
+        // uso immagine fornita da utente
+        let model_proto: ModelProto = decode_message(&path.model);
+
+        println!("Reading the inputs ...");
+        let mut input_tensor: TensorProto = decode_message(&path.test);
+        // uso immagine
+        if use_custom_img {
+            let arrD_img = convert_img(path_img.to_string());
+            input_tensor = ndarray_to_tensor_proto::<f32>(arrD_img, "data").unwrap();
+        }
+
+        println!("starting Network...");
+        let new_env = OnnxRunningEnvironment::new(model_proto, input_tensor);
+
+        if is_run_par_enabled {
+            let pred_out = new_env.run(is_run_par_enabled); //predicted output par
+            println!("Predicted classes:");
+            print_results(pred_out);
+        } else {
+            let pred_out = new_env.run_sequential(is_run_par_enabled); //predicted output seq
+            println!("Predicted classes:");
+            print_results(pred_out);
+        }
+
+        if !use_custom_img {
+            let output_tensor: TensorProto = decode_message(&path.output);
+            println!("\nGround truth classes:");
+            print_results(output_tensor);
+        }
+    }
 }
 
 fn print_results(tensor: TensorProto) {
     let data = tensor_proto_to_ndarray::<f32>(&tensor).unwrap();
-    // Calculate total number of elements and the batch size
-    let total_elements = data.len();
-    let first_dim = data.shape()[0];
-    let inferred_dim = total_elements / first_dim;
 
-    // Reshape the tensor
-    let reshaped = data.view().into_shape((first_dim, inferred_dim)).ok().unwrap();
-
-    // Apply softmax and find the top 5 peak classes for each batch
-    let mut top_5_peak_classes = Vec::with_capacity(first_dim);
-
-    for batch in reshaped.outer_iter() {
-        let max = batch.view().fold(0. / 0., |m, &val| f32::max(m, val)); // NaN-safe max
-        let exps = batch.view().mapv(|x| (x - max).exp());
-        let sum = exps.sum();
-        let probabilities = exps / sum;
-
-        let mut indexed_values: Vec<(usize, f32)> = probabilities
-            .iter()
-            .enumerate()
-            .map(|(i, &v)| (i, v))
-            .collect();
-        indexed_values.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap()); // Sort in descending order
-
-        let top_5: Vec<(usize, f32)> = indexed_values.iter().take(5).cloned().collect();
-        top_5_peak_classes.push(top_5);
+    for element in data
+        .iter()
+        .enumerate()
+        .sorted_by(|a, b| b.1.total_cmp(a.1))
+        .take(3)
+    {
+        print!(
+            "|Class n:{} Value:{}| ",
+            CLASSES_NAMES[element.0], element.1
+        );
     }
-
-    println!("{:?}", top_5_peak_classes);
 }
-
+/*
 fn read_input(input: &str) {
     // Path to your .pb file da concatenare
     let file_path = input;
@@ -244,208 +192,38 @@ fn read_input(input: &str) {
 
     // If not preprocessing, proceed with model loading and inference
 }
+*/
 
-fn mobilenet_load_testset() -> &'static str {
-    let path_testset = "src/mobilenet/data_mobilenet/input_0.pb";
-    return path_testset;
-}
+/*
+fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, new_height: u32) -> DynamicImage {
+    // Resize the image
+    let resized_image = image.resize_exact(new_width, new_height, image::imageops::FilterType::Lanczos3);
 
-fn mobilenet_load() -> &'static str {
-    let path_model = "src/mobilenet/model.onnx";
-    return path_model;
-}
+    // Create a new image with the desired dimensions (1*3*224*224)
+    let mut final_image = DynamicImage::new_rgba8(width * new_width, height * new_height);
 
-fn mobilenet_load_output() -> &'static str {
-    let path_output = "src/mobilenet/data_mobilenet/output_0.pb";
-    return path_output;
-}
+    // Paste the resized image into the final image
+    final_image.copy_from(&resized_image, 0, 0);
 
-fn googlenet_load_testset() -> &'static str {
-    let path_testset = "src/googlenet/data_googlenet/input_0.pb";
-    return path_testset;
+    final_image
 }
-
-fn googlenet_load() -> &'static str {
-    let path_model = "src/googlenet/model.onnx";
-    return path_model;
-}
-fn googlenet_load_output() -> &'static str {
-    let path_output = "src/googlenet/data_googlenet/output_0.pb";
-    return path_output;
-}
-fn resnet_load_testset() -> &'static str {
-    let path_testset = "src/resnet/data_resnet/input_0.pb";
-    return path_testset;
-}
-
-fn resnet_load() -> &'static str {
-    let path_model = "src/resnet/model.onnx";
-    return path_model;
-}
-
-fn resnet_load_output() -> &'static str {
-    let path_output = "src/resnet/data_resnet/output_0.pb";
-    return path_output;
-}
-
-fn squeezenet_load_testset() -> &'static str {
-    let path_testset = "src/squeezenet/data_squeezenet/input_0.pb";
-    return path_testset;
-}
-
-fn squeezenet_load() -> &'static str {
-    let path_model = "src/squeezenet/model.onnx";
-    return path_model;
-}
-
-fn squeezenet_load_output() -> &'static str {
-    let path_output = "src/squeezenet/data_squeezenet/output_0.pb";
-    return path_output;
-}
-struct Operation {
-    op_type: OperationType,
-    input: Vec<TensorProto>,
-    op_attributes: Vec<AttributeProto>,
-}
-
-fn from<T>(array: ArrayD<T>, name: String) -> Result<TensorProto, OnnxError>
-where
-    T: Into<f32> + Into<f64> + Into<i32> + Into<i64>,
-{
-    let mut tensor = TensorProto {
-        dims: array.shape().iter().map(|&x| x as i64).collect(),
-        data_type: DataType::Undefined.into(),
-        segment: None,
-        name: name,
-        doc_string: "".to_string(),
-        data_location: DataLocation::Default.into(),
-        float_data: Vec::new(),
-        int32_data: Vec::new(),
-        string_data: Vec::new(),
-        int64_data: Vec::new(),
-        raw_data: Vec::new(),
-        external_data: Vec::new(),
-        double_data: Vec::new(),
-        uint64_data: Vec::new(),
-    };
-    match type_name::<T>() {
-        "f32" => {
-            tensor.data_type = DataType::Float.into();
-            tensor.float_data = array.into_raw_vec().into_iter().map(|x| x.into()).collect();
-            Ok(tensor)
-        }
-        _ => Err(OnnxError::new("Unsupported data type")),
-    }
-}
+*/
 
 #[derive(Debug)]
 pub enum OnnxError {
-    /// Indicates that a required attribute was not found.
-    ///
-    /// The contained `String` provides the name or identifier of the missing attribute.
     AttributeNotFound(String),
 
-    /// Represents generic internal errors that might occur during processing.
-    ///
-    /// The contained `String` provides a description or message detailing the nature of the internal error.
     InternalError(String),
 
-    /// Indicates an error that occurred during data type conversion.
-    ///
-    /// The contained `String` provides additional information about the conversion that failed.
     ConversionError(String),
 
-    /// Represents an error where an operation or functionality is not supported.
-    ///
-    /// The contained `String` provides details about the unsupported operation.
     UnsupportedOperation(String),
 
-    /// Indicates a mismatch between expected and actual tensor shapes.
-    ///
-    /// The contained `String` provides details about the shape mismatch, such as the expected vs. actual dimensions.
     ShapeMismatch(String),
 
-    /// Represents an error where an expected input tensor or data is missing.
-    ///
-    /// The contained `String` provides details about the missing input.
     MissingInput(String),
 
-    /// Indicates an error due to invalid data or values.
-    ///
-    /// The contained `String` provides details about the nature of the invalid data.
     InvalidValue(String),
 
-    /// Indicates an error related to tensor shape computations.
-    ///
-    /// The contained `String` provides details about the shape computation error.
     ShapeError(String),
-}
-
-impl OnnxError {
-    fn new(message: &str) -> OnnxError {
-        OnnxError::InternalError(message.to_string())
-    }
-}
-
-// impl fmt::Display for OnnxError {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "{}", self.message)
-//     }
-// }
-
-// impl Error for OnnxError {
-//     fn description(&self) -> &str {
-//         &self.message
-//     }
-// }
-impl TensorProto {
-    pub fn new() -> TensorProto {
-        ::std::default::Default::default()
-    }
-}
-
-enum OperationType {
-    ADD,
-    RELU,
-    EXP,
-    CONCAT,
-    FLATTEN,
-    RESHAPE,
-    CONV,
-    MAXPOOL,
-    BATCHNORM,
-    DROPOUT,
-    SOFTMAX,
-    GEMM,
-    MATMUL,
-    REDUCESUM,
-    GLOBALAVGPOOL,
-    LRN,
-}
-
-fn type_of<T>(_: T) -> &'static str {
-    type_name::<T>()
-}
-
-fn into<T>(tensor: TensorProto) -> Result<ArrayD<T>, std::io::Error>
-where
-    T: From<f32>,
-{
-    let shape: Vec<usize> = tensor.dims.iter().map(|dim| *dim as usize).collect();
-
-    match tensor.data_type {
-        1 => {
-            //let float_data: Result<Vec<T>, _> = tensor.float_data.into_iter().map(T::from).collect();
-            let data: Vec<T> = tensor
-                .float_data
-                .iter()
-                .map(|&value| value.into())
-                .collect();
-            Ok(ArrayD::from_shape_vec(IxDyn(&shape), data).unwrap())
-        }
-        _ => Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Unsupported data type",
-        )),
-    }
 }

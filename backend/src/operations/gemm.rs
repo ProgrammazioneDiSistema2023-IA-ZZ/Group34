@@ -7,9 +7,8 @@ use crate::{
     OnnxError,
 };
 use ndarray::prelude::*;
+use rayon::prelude::*;
 use tract_onnx::tract_core::tract_data::itertools::Itertools;
-//use rayon::prelude::*;
-
 pub enum OperationMode {
     Gemm,
     Matmul,
@@ -21,6 +20,7 @@ pub fn gemm(
     inputs: Vec<TensorProto>,
     initializers: Vec<TensorProto>,
     node: &NodeProto,
+    is_par_enabled: bool,
 ) -> Result<TensorProto, OnnxError> {
     // Estrai gli attributi dal nodo ONNX.
     let attributes = extract_attributes(&node.attribute)?;
@@ -39,16 +39,10 @@ pub fn gemm(
     merged_tensors.extend(initializers);
 
     // Converti i TensorProto A e B in ndarray di tipo f32.
-    let mut a = tensor_proto_to_ndarray::<f32>(get_tensor(
-        &merged_tensors.iter().collect_vec(),
-        0,
-        "A",
-    )?)?;
-    let mut b = tensor_proto_to_ndarray::<f32>(get_tensor(
-        &merged_tensors.iter().collect_vec(),
-        1,
-        "B",
-    )?)?;
+    let mut a =
+        tensor_proto_to_ndarray::<f32>(get_tensor(&merged_tensors.iter().collect_vec(), 0, "A")?)?;
+    let mut b =
+        tensor_proto_to_ndarray::<f32>(get_tensor(&merged_tensors.iter().collect_vec(), 1, "B")?)?;
 
     // Trasponi le matrici A e B se richiesto dagli attributi transA e transB.
     if trans_a == 1 {
@@ -59,7 +53,7 @@ pub fn gemm(
     }
 
     // Esegui la moltiplicazione delle matrici.
-    let mut result = matrix_multiply(&a, &b).ok_or(OnnxError::InternalError(
+    let mut result = matrix_multiply(&a, &b, is_par_enabled).ok_or(OnnxError::InternalError(
         "Failed to multiply matrices".to_string(),
     ))?;
 
@@ -115,7 +109,7 @@ fn get_tensor<'a>(
 }
 
 // Funzione di supporto per eseguire la moltiplicazione di matrici in batch o singola in base alle dimensioni di A.
-fn matrix_multiply(a: &ArrayD<f32>, b: &ArrayD<f32>) -> Option<ArrayD<f32>> {
+fn matrix_multiply(a: &ArrayD<f32>, b: &ArrayD<f32>, is_par_enabled: bool) -> Option<ArrayD<f32>> {
     let b_matrix = b
         .view()
         .into_dimensionality::<ndarray::Ix2>()
@@ -124,7 +118,7 @@ fn matrix_multiply(a: &ArrayD<f32>, b: &ArrayD<f32>) -> Option<ArrayD<f32>> {
 
     match a.shape()[0] {
         1 => matrix_multiply_single(a, &b_matrix),
-        _ => matrix_multiply_batched(a, &b_matrix),
+        _ => matrix_multiply_batched(a, &b_matrix, is_par_enabled),
     }
 }
 
@@ -133,23 +127,39 @@ fn matrix_multiply(a: &ArrayD<f32>, b: &ArrayD<f32>) -> Option<ArrayD<f32>> {
 fn matrix_multiply_batched(
     a: &ArrayD<f32>,
     b_matrix: &ndarray::Array2<f32>,
+    is_par_enabled: bool,
 ) -> Option<ArrayD<f32>> {
     let shape = a.shape();
     let batch_size = shape[0];
 
     // Parallel processing of the batch
-    let result_list: Vec<_> = (0..batch_size)
-        .into_iter()
-        .map(|i| {
-            let a_slice = a.slice(s![i, ..]);
-            a_slice.dot(b_matrix)
-        })
-        .collect();
+    if is_par_enabled {
+        let result_list: Vec<_> = (0..batch_size)
+            .into_par_iter()
+            .map(|i| {
+                let a_slice = a.slice(s![i, ..]);
+                a_slice.dot(b_matrix)
+            })
+            .collect();
 
-    let views: Vec<_> = result_list.iter().map(|arr| arr.view()).collect();
-    let result = ndarray::stack(Axis(0), &views[..]).unwrap();
+        let views: Vec<_> = result_list.iter().map(|arr| arr.view()).collect();
+        let result = ndarray::stack(Axis(0), &views[..]).unwrap();
 
-    Some(result.into_dyn())
+        Some(result.into_dyn())
+    } else {
+        let result_list: Vec<_> = (0..batch_size)
+            .into_iter()
+            .map(|i| {
+                let a_slice = a.slice(s![i, ..]);
+                a_slice.dot(b_matrix)
+            })
+            .collect();
+
+        let views: Vec<_> = result_list.iter().map(|arr| arr.view()).collect();
+        let result = ndarray::stack(Axis(0), &views[..]).unwrap();
+
+        Some(result.into_dyn())
+    }
 }
 
 fn matrix_multiply_single(a: &ArrayD<f32>, b_matrix: &ndarray::Array2<f32>) -> Option<ArrayD<f32>> {

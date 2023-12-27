@@ -1,5 +1,5 @@
 [package]
-name = "cpu-count"
+name = "Group34"
 version = "0.1.0"
 license = "ISC"
 edition = "2018"
@@ -21,6 +21,9 @@ prost = "0.11.8"
 prost-types = "0.11.8"
 rand = "0.8.5"
 num-traits = "0.2.14"
+rayon = "1.7.0"
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0"
 
 [dependencies.neon]
 version = "0.10"
