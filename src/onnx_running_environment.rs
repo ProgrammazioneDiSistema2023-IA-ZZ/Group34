@@ -285,7 +285,7 @@ impl OnnxModelEditor {
         Self { model }
     }
 
-    fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
+    pub fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
         let mut node_map: LinkedList<NodeProto> = LinkedList::new();
         for node in model.clone().graph.unwrap().node {
             // inserisco nella mappa nodi con chiave nome
@@ -325,7 +325,7 @@ impl OnnxModelEditor {
         return model_new;
     }
 
-    fn insert_node(
+    pub fn insert_node(
         node_name: String,
         model: ModelProto,
         input: Vec<String>,
@@ -350,12 +350,20 @@ impl OnnxModelEditor {
         );
         let mut before: Option<NodeProto> = None;
         for node in model.clone().graph.unwrap().node {
+            // se node before è null lo aggiungo subito
+            if node_before.clone().is_none() {
+                node_map.push_back(node_to_insert.clone());
+                break;
+            }
+            if node_after.clone().is_none() {
+                break;
+            }
             if node.name == node_after.clone().unwrap().name
                 || node.name == node_before.clone().unwrap().name
             {
                 //controllo se il nome del nodo successivo è uguale
                 if before.clone().unwrap().name == node_before.clone().unwrap().name
-                    || before.clone().is_none() == node_before.clone().is_none()
+                    
                 {
                     // se anche il nome del nodo precedente corrisponde
                     // inserisco il nuovo nodo nella posizione specificata
@@ -367,16 +375,10 @@ impl OnnxModelEditor {
             // salvo il nodo precedente
             before = Some(node.clone());
         }
-        // se il nodo che voglio inserire è l'ultimo non avra un successivo quindi ho salvato
-        // uscendo dal for before come ultimo nodo della rete quindi vado a fare push
-        if before.clone().unwrap().name == node_before.clone().unwrap().name
-            && node_before.clone().is_none()
-        {
-            // se anche il nome del nodo precedente corrisponde
-            // inserisco il nuovo nodo nella posizione specificata
-            // in questo caso sarà l'ultimo nodo
+        if node_after.clone().is_none() {
             node_map.push_back(node_to_insert.clone());
         }
+
         let graph = GraphProto {
             node: node_map.into_iter().collect(),
             name: model.clone().graph.unwrap().name,
@@ -403,7 +405,7 @@ impl OnnxModelEditor {
         };
         return model_new;
     }
-    fn modify_node(
+    pub fn modify_node(
         node_name: String,
         model: ModelProto,
         input: Vec<String>,

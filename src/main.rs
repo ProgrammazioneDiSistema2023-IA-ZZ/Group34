@@ -6,6 +6,7 @@ use crate::onnx::NodeProto;
 use crate::onnx::TensorProto;
 use crate::onnx::*;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
+use crate::onnx_running_environment::OnnxModelEditor;
 use crate::operations::utils::ndarray_to_tensor_proto;
 
 use crate::utils::convert_img;
@@ -89,6 +90,7 @@ fn get_string_from_console(prompt: &str) -> String {
 }
 
 fn main() {
+    let mut model_proto1;
     loop {
         println!("
         ————————————————————————————————————————————————————
@@ -128,7 +130,7 @@ fn main() {
 
         // uso immagine fornita da utente
         let model_proto: ModelProto = decode_message(&path.model);
-
+        model_proto1=model_proto.clone();
         println!("Reading the inputs ...");
         let mut input_tensor: TensorProto = decode_message(&path.test);
         // uso immagine
