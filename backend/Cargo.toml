@@ -1,5 +1,5 @@
 [package]
-name = "Group34"
+name = "group_34"
 version = "0.1.0"
 license = "ISC"
 edition = "2018"
@@ -7,6 +7,7 @@ exclude = ["index.node"]
 
 [lib]
 crate-type = ["cdylib"]
+name = "group_34"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -24,6 +25,7 @@ num-traits = "0.2.14"
 rayon = "1.7.0"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0"
+pyo3 = { version = "0.20.0", features = ["extension-module"] }
 
 [dependencies.neon]
 version = "0.10"

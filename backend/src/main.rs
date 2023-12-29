@@ -2,9 +2,8 @@
 mod onnx {
     include!("onnx.rs");
 }
-use crate::onnx::NodeProto;
+use crate::onnx::ModelProto;
 use crate::onnx::TensorProto;
-use crate::onnx::*;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
 use crate::operations::utils::ndarray_to_tensor_proto;
 
@@ -12,25 +11,11 @@ use crate::utils::convert_img;
 use crate::utils::decode_message;
 use crate::utils::CLASSES_NAMES;
 use crate::utils::get_path_from_ordinal;
-
-use image::imageops;
-use image::GenericImageView;
-use ndarray::Array3;
-use ndarray::{Array, Array2, Array4, ArrayD, Axis};
-use onnx::AttributeProto;
-use onnx::FunctionProto;
-use onnx::GraphProto;
-use onnx::ModelProto;
-use onnx::OperatorSetIdProto;
-use onnx::StringStringEntryProto;
-use onnx::TrainingInfoProto;
 use operations::utils::tensor_proto_to_ndarray;
-use std::collections::btree_map::Range;
-use std::collections::LinkedList;
+
 use std::io::{self, Read, Write};
 use tract_onnx::tract_core::tract_data::itertools::Itertools;
 
-use std::process::exit;
 mod onnx_running_environment;
 mod operations;
 mod utils;
@@ -86,7 +71,7 @@ fn get_string_from_console(prompt: &str) -> String {
     choice.to_string()
 }
 
-fn main() {
+pub fn main() {
     loop {
         println!("
         ————————————————————————————————————————————————————
