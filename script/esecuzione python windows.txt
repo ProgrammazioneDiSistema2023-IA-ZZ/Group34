@@ -1,0 +1,15 @@
+--> Eseguire questi comandi su powershell come amministratore dalla cartella backend
+
+if (!(Test-Path ./venv)) {
+  python -m venv venv
+}
+$policy = Get-ExecutionPolicy
+Set-ExecutionPolicy Unrestricted
+./venv\Scripts\Activate.ps1
+Set-ExecutionPolicy $policy
+
+--> ora si può eseguire python
+
+python
+import group_34
+group_34.main_python()
