@@ -107,7 +107,7 @@ impl OnnxRunningEnvironment {
 
         thread::scope(|s| {
             for current_node in self.node_io_vec.iter() {
-                s.spawn(|| {
+                s.spawn(move || {
                     let NodeIO {
                         senders,
                         optional_receiver,
