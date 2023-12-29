@@ -1,4 +1,4 @@
---> Eseguire questi comandi su powershell come amministratore dalla cartella backend
+--> Eseguire questi comandi su powershell come amministratore dalla cartella ./backend
 
 if (!(Test-Path ./venv)) {
   python -m venv venv
@@ -8,7 +8,7 @@ Set-ExecutionPolicy Unrestricted
 ./venv\Scripts\Activate.ps1
 Set-ExecutionPolicy $policy
 
---> ora si può eseguire python
+maturin develop
 
 python
 import group_34

@@ -1,0 +1,10 @@
+--> Eseguire questi comandi dalla cartella ./backend
+
+if [ ! -d "./venv" ]; then
+  python -m venv venv
+fi
+source myvenv/bin/activate
+maturin develop
+python
+import group_34
+group_34.main_python()
