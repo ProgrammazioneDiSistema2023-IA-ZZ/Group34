@@ -67,7 +67,10 @@ impl OnnxRunningEnvironment {
                 senders, //è il vettore dei sender che verrà generato in seguito dai nodi che hanno come input l'output del nodo in questione
                 optional_receiver, //receiver da cui leggere gli input
                 node: current_node_clone.clone(),
-                initializers: Self::get_initializers(model.clone().graph.unwrap(), current_node.clone()),
+                initializers: Self::get_initializers(
+                    model.clone().graph.unwrap(),
+                    current_node.clone(),
+                ),
             };
 
             //si inserisce nei nodi che hanno come output gli input del nodo corrente il sender del nodo corrente
@@ -276,8 +279,7 @@ impl OnnxRunningEnvironment {
     }
 }
 
-pub struct OnnxModelEditor {
-}
+pub struct OnnxModelEditor {}
 
 impl OnnxModelEditor {
     pub fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
@@ -330,7 +332,7 @@ impl OnnxModelEditor {
         doc_string: String,
         node_before: Option<NodeProto>, // uso questi parametri per inserire il nodo in una pos specifica
         node_after: Option<NodeProto>, // possono essere entrambi none se per esempio è il primo nodo
-        model: ModelProto
+        model: ModelProto,
     ) -> ModelProto {
         let mut node_map: LinkedList<&NodeProto> = LinkedList::new();
         let node_to_insert = NodeProto::new(
@@ -343,12 +345,26 @@ impl OnnxModelEditor {
             doc_string,
         );
         let mut before: Option<&NodeProto> = None;
+
+        if node_before.is_none() {
+            node_map.push_front(&node_to_insert);
+        }
+        if node_after.is_none() {
+            node_map.push_back(&node_to_insert);
+        }
+
         for node in &model.graph.as_ref().unwrap().node {
+            // se node before è null lo aggiungo subito
+
+            if node_after.is_none() {
+                break;
+            }
             if node.name == node_after.as_ref().unwrap().name
                 || node.name == node_before.as_ref().unwrap().name
             {
                 //controllo se il nome del nodo successivo è uguale
-                if before.is_none() == node_before.is_none() || before.unwrap().name == node_before.as_ref().unwrap().name
+                if before.is_none() == node_before.is_none()
+                    || before.unwrap().name == node_before.as_ref().unwrap().name
                 {
                     // se anche il nome del nodo precedente corrisponde
                     // inserisco il nuovo nodo nella posizione specificata
@@ -360,19 +376,10 @@ impl OnnxModelEditor {
             // salvo il nodo precedente
             before = Some(node);
         }
-        // se il nodo che voglio inserire è l'ultimo non avra un successivo quindi ho salvato
-        // uscendo dal for before come ultimo nodo della rete quindi vado a fare push
-        if before.unwrap().name == node_before.as_ref().unwrap().name
-            && node_before.is_none()
-        {
-            // se anche il nome del nodo precedente corrisponde
-            // inserisco il nuovo nodo nella posizione specificata
-            // in questo caso sarà l'ultimo nodo
-            node_map.push_back(&node_to_insert);
-        }
+
         let mut model_new = model.clone();
         let mut graph = model_new.graph.unwrap();
-        graph.node = node_map.into_iter().map(|x| x.clone() ).collect();
+        graph.node = node_map.into_iter().map(|x| x.clone()).collect();
         model_new.graph = Some(graph);
 
         // let graph = GraphProto {
@@ -401,7 +408,7 @@ impl OnnxModelEditor {
         // };
         return model_new;
     }
-    
+
     pub fn modify_node(
         node_name: String,
         model: ModelProto,
@@ -527,9 +534,6 @@ enum OperationType {
     GLOBALAVGPOOL,
     LRN,
 }
-
-
-
 
 impl NodeProto {
     pub fn new(
