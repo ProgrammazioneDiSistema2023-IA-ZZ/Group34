@@ -15,6 +15,25 @@ const SCALEFACTOR: f32 = 255.0;
 pub const MODEL_PATHS_ENDINGS: [&'static str; 5] =
     ["mobilenet", "resnet", "squeezenet", "caffenet", "alexnet"];
 
+#[derive(Debug)]
+pub enum OnnxError {
+    AttributeNotFound(String),
+
+    InternalError(String),
+
+    ConversionError(String),
+
+    UnsupportedOperation(String),
+
+    ShapeMismatch(String),
+
+    MissingInput(String),
+
+    InvalidValue(String),
+
+    ShapeError(String),
+}
+
 pub fn write_message<M: prost::Message>(message: &M, path: &str) -> std::io::Result<usize> {
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(message.encoded_len());
@@ -122,12 +141,11 @@ pub fn convert_img(path: String) -> ArrayD<f32> {
     arr_d
 }
 
-
 pub struct ModelPats {
     pub model: String,
     pub test: String,
     pub output: String,
-    pub model_name: String
+    pub model_name: String,
 }
 impl ModelPats {
     pub fn new(model: String, test: String, output: String, model_name: String) -> Self {
@@ -135,7 +153,7 @@ impl ModelPats {
             model,
             test,
             output,
-            model_name
+            model_name,
         }
     }
 }
@@ -151,7 +169,7 @@ pub fn get_path_from_ordinal(ordinal: usize) -> Option<ModelPats> {
         format!("src/models/{ending}/model.onnx"),
         format!("src/models/{ending}/data_{ending}/input_0.pb"),
         format!("src/models/{ending}/data_{ending}/output_0.pb"),
-        ending.to_string()
+        ending.to_string(),
     ))
 }
 

@@ -71,7 +71,7 @@ fn get_string_from_console(prompt: &str) -> String {
     choice.to_string()
 }
 
-pub fn main() {
+fn main() {
     loop {
         println!("
         ————————————————————————————————————————————————————
@@ -193,22 +193,3 @@ fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, ne
     final_image
 }
 */
-
-#[derive(Debug)]
-pub enum OnnxError {
-    AttributeNotFound(String),
-
-    InternalError(String),
-
-    ConversionError(String),
-
-    UnsupportedOperation(String),
-
-    ShapeMismatch(String),
-
-    MissingInput(String),
-
-    InvalidValue(String),
-
-    ShapeError(String),
-}

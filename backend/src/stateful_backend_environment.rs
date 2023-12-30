@@ -2,7 +2,6 @@ use crate::{
     onnx::{attribute_proto, AttributeProto, ModelProto},
     onnx_running_environment::OnnxModelEditor,
     utils::{decode_message, get_path_from_ordinal, write_message},
-    OnnxError,
 };
 use protobuf::Error;
 use serde::{Deserialize, Serialize};

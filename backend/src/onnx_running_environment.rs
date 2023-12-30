@@ -20,13 +20,13 @@ use crate::operations::relu;
 use crate::operations::reshape;
 use crate::operations::softmax;
 
-use crate::OnnxError;
+use crate::utils::OnnxError;
 
 use std::collections::{HashMap, LinkedList};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Instant;
-use tract_onnx::prelude::tract_itertools::Itertools;
+
 pub struct OnnxRunningEnvironment {
     input_tensor: TensorProto,
     input_senders: Vec<Sender<TensorProto>>,
