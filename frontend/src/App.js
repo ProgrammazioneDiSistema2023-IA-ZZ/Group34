@@ -19,7 +19,7 @@ function App() {
     return (
         <div className="App">
             <header className="App-header">
-                <p>{message}</p>
+                <p>Message: {message}</p>
 
                 <div>
                     <h1>Graph Visualization Example</h1>

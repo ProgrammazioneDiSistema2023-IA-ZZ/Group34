@@ -1,16 +1,35 @@
+mod stateful_backend_environment;
+mod onnx;
+mod onnx_running_environment;
+mod operations;
+mod utils;
 mod js_binding {
     use neon::prelude::*;
+    use prost::Message;
+    use crate::stateful_backend_environment;
+
     fn hello(mut cx: FunctionContext) -> JsResult<JsString> {
         Ok(cx.string("hello node!!"))
+    }
+    fn start(mut cx: FunctionContext) -> JsResult<JsBoolean> {
+        Ok(cx.boolean(stateful_backend_environment::start().is_ok()))
+    }
+
+    fn select_model(mut cx: FunctionContext) -> JsResult<JsString> {
+        let a = stateful_backend_environment::select_model(1).graph.unwrap().encode_to_vec();
+        Ok(cx.string::<String>( prost::Message::decode(&a[..]).unwrap()))
     }
 
     #[neon::main]
     fn main_js(mut cx: ModuleContext) -> NeonResult<()> {
         cx.export_function("hello", hello)?;
+        cx.export_function("start", start)?;
+        cx.export_function("select_model", select_model)?;
         Ok(())
     }
 }
 
+#[cfg(feature = "include_pyo3")]
 mod python_binding {
     use pyo3::prelude::*;
 
