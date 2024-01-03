@@ -1,6 +1,6 @@
 use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,
-}, onnx::{NodeProto, TensorProto}, OnnxError};
+}, onnx::{NodeProto, TensorProto}, utils::OnnxError};
 use ndarray::prelude::*;
 use rand::{Rng, SeedableRng};
 // Funzione pubblica per l'implementazione del dropout in un grafo ONNX.

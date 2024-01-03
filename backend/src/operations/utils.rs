@@ -1,10 +1,10 @@
 use crate::onnx::{attribute_proto, tensor_proto};
+use crate::utils::OnnxError;
 use crate::{
     onnx::{
         attribute_proto::AttributeType, tensor_proto::DataType, AttributeProto, GraphProto,
         NodeProto, TensorProto,
     },
-    OnnxError,
 };
 use ndarray::*;
 use std::collections::HashMap;

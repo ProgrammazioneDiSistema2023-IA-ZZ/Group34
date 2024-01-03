@@ -1,4 +1,4 @@
-use crate::{operations::utils::tensor_proto_to_ndarray, OnnxError, onnx::{TensorProto, NodeProto}};
+use crate::{operations::utils::tensor_proto_to_ndarray, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::ArrayD;
 
 use super::utils::convert_to_output_tensor;

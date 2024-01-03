@@ -1,7 +1,7 @@
 use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_float_attribute, get_int_attribute,
     tensor_proto_to_ndarray,
-}, onnx::{TensorProto, NodeProto}, OnnxError};
+}, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::prelude::*;
 use rayon::prelude::*;
 // Funzione pubblica per implementare l'operazione di "Local Response Normalization" (LRN) in un grafo ONNX.

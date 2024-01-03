@@ -1,4 +1,4 @@
-use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, OnnxError};
+use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::prelude::*;
 pub fn add(
     inputs: Vec<TensorProto>,

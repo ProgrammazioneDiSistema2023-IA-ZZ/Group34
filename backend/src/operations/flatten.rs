@@ -1,4 +1,4 @@
-use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, OnnxError};
+use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 // Funzione pubblica per implementare l'operazione di flattening in un grafo ONNX.
 // L'operazione di flattening ridimensiona il tensore di input a una forma lineare (1D).
 

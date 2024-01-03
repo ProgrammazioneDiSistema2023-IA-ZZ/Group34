@@ -3,8 +3,7 @@ use crate::{
     operations::utils::{
         convert_to_output_tensor, extract_attributes, stack_along_batch_dimension,
         tensor_proto_to_ndarray,
-    },
-    OnnxError,
+    }, utils::OnnxError,
 };
 use ndarray::prelude::*;
 use rayon::prelude::*;

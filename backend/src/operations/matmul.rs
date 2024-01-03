@@ -1,7 +1,6 @@
 use crate::{
     onnx::{NodeProto, TensorProto},
-    operations::gemm::gemm,
-    OnnxError,
+    operations::gemm::gemm, utils::OnnxError,
 };
 
 pub fn matmul(

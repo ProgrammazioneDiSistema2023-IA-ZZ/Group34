@@ -4,7 +4,7 @@ use crate::operations::reducesum::reducesum;
 use crate::operations::utils::{
     convert_to_output_tensor, stack_along_batch_dimension, tensor_proto_to_ndarray,
 };
-use crate::OnnxError;
+use crate::utils::OnnxError;
 use ndarray::prelude::*;
 pub fn softmax(input: Vec<TensorProto>, node: &NodeProto,is_par_enabled:  bool) -> Result<TensorProto, OnnxError> {
     // Calcola l'esponenziale di ciascun elemento del tensore di input.

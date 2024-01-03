@@ -10,11 +10,27 @@ const CROP: u32 = 224;
 const MEAN: [f32; 3] = [0.485, 0.456, 0.406];
 const STD: [f32; 3] = [0.229, 0.224, 0.225];
 const SCALEFACTOR: f32 = 255.0;
-
+#[derive(Debug)]
+pub enum OnnxError {
+    AttributeNotFound(String),
+    
+    InternalError(String),
+    
+    ConversionError(String),
+    
+    UnsupportedOperation(String),
+    
+    ShapeMismatch(String),
+    
+    MissingInput(String),
+    
+    InvalidValue(String),
+    
+    ShapeError(String),
+}
 //path of models
 pub const MODEL_PATHS_ENDINGS: [&'static str; 5] =
     ["mobilenet", "resnet", "squeezenet", "caffenet", "alexnet"];
-
 pub fn write_message<M: prost::Message>(message: &M, path: &str) -> std::io::Result<usize> {
     let mut buf: Vec<u8> = Vec::new();
     buf.reserve(message.encoded_len());

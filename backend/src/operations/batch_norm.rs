@@ -2,9 +2,8 @@ use crate::{
     onnx::{NodeProto, TensorProto},
     operations::utils::{
         convert_to_output_tensor, extract_attributes, get_float_attribute,
-        stack_along_batch_dimension, tensor_proto_to_ndarray,
-    },
-    OnnxError,
+        stack_along_batch_dimension, tensor_proto_to_ndarray
+    }, utils::OnnxError,
 };
 use ndarray::prelude::*;
 use rayon::prelude::*;

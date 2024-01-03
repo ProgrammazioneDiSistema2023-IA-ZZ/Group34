@@ -194,21 +194,3 @@ fn resize_image(image: DynamicImage, width: u32, height: u32, new_width: u32, ne
 }
 */
 
-#[derive(Debug)]
-pub enum OnnxError {
-    AttributeNotFound(String),
-
-    InternalError(String),
-
-    ConversionError(String),
-
-    UnsupportedOperation(String),
-
-    ShapeMismatch(String),
-
-    MissingInput(String),
-
-    InvalidValue(String),
-
-    ShapeError(String),
-}

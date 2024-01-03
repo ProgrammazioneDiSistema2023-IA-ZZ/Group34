@@ -1,6 +1,6 @@
 use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, get_ints_attribute,
-    get_string_attribute, pad_matrix_3d, stack_along_batch_dimension, tensor_proto_to_ndarray, }, OnnxError, onnx::{TensorProto, NodeProto}};
+    get_string_attribute, pad_matrix_3d, stack_along_batch_dimension, tensor_proto_to_ndarray, }, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::prelude::*;
 use num_traits::Float;
 use super::utils::Attribute;

@@ -1,6 +1,6 @@
 use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, tensor_proto_to_ndarray,
-}, OnnxError, onnx::{TensorProto, NodeProto}};
+}, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::prelude::*;
 
 // Funzione privata per la riduzione di un singolo tensore secondo una forma target,

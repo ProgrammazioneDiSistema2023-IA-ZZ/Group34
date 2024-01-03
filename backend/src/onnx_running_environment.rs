@@ -19,8 +19,9 @@ use crate::operations::reducesum;
 use crate::operations::relu;
 use crate::operations::reshape;
 use crate::operations::softmax;
+use crate::utils::OnnxError;
 
-use crate::OnnxError;
+
 
 use std::collections::{HashMap, LinkedList};
 use std::sync::mpsc::{channel, Receiver, Sender};

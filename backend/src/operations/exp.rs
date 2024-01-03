@@ -2,8 +2,7 @@ use crate::{
     onnx::{NodeProto, TensorProto},
     operations::utils::{
         convert_to_output_tensor, stack_along_batch_dimension, tensor_proto_to_ndarray,
-    },
-    OnnxError,
+    }, utils::OnnxError,
 };
 use ndarray::prelude::*;
 use rayon::prelude::*;

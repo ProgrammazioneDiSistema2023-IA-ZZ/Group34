@@ -1,7 +1,7 @@
 use crate::{operations::utils::{
     convert_to_output_tensor, extract_attributes, get_int_attribute, get_ints_attribute,
     pad_matrix_2d, tensor_proto_to_ndarray,
-}, OnnxError, onnx::{TensorProto, NodeProto}};
+}, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::prelude::*;
 use rayon::prelude::*;
 // Funzione pubblica per implementare l'operazione di max pooling in un grafo ONNX.
