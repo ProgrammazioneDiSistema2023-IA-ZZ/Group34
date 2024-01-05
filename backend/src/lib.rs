@@ -13,7 +13,14 @@ mod js_binding {
         Ok(cx.string("hello node!!"))
     }
     fn start(mut cx: FunctionContext) -> JsResult<JsBoolean> {
-        Ok(cx.boolean(stateful_backend_environment::start().is_ok()))
+        match stateful_backend_environment::start() {
+            Ok(_) => Ok(cx.boolean(true)),
+            Err(e) => {
+                println!("{}", e);
+                Ok(cx.boolean(false))
+            }
+        }
+        //Ok(cx.boolean(stateful_backend_environment::start().is_ok()))
     }
 
     fn select_model(mut cx: FunctionContext) -> JsResult<JsString> {
