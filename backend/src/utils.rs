@@ -1174,3 +1174,22 @@ pub const CLASSES_NAMES: [&str; 1000] = [
     "ear, spike, capitulum",
     "toilet tissue, toilet paper, bathroom tissue",
 ];
+
+#[derive(Debug)]
+pub enum OnnxError {
+    AttributeNotFound(String),
+
+    InternalError(String),
+
+    ConversionError(String),
+
+    UnsupportedOperation(String),
+
+    ShapeMismatch(String),
+
+    MissingInput(String),
+
+    InvalidValue(String),
+
+    ShapeError(String),
+}

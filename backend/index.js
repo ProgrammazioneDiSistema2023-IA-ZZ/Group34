@@ -7,12 +7,11 @@ const port = 3001;
 const rust = require('.');
 console.log(rust.hello());
 console.log(rust.start());
-console.log(rust.smodel(1));
 
 app.use(cors());
 
 app.get('/get', (req, res) => {
-  res.json({ message: 'Hello from Node.js backend!  && ' +  rust.smodel(1)});
+  res.json({ message: 'Hello from Node.js backend!  && ' +  rust.select_model()});
 });
 
 app.listen(port, () => {
