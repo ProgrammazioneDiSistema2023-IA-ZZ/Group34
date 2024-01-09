@@ -1,15 +1,14 @@
 import React, {useState, useEffect} from 'react';
-import TreeVisualization from "./TreeVisualization";
-import DAGVisualization from "./Graph";
 import FixedGraph from "./Graph";
-import D3Graph from "./D3Graph";
 //import './App.css';
 
 function App() {
     const [message, setMessage] = useState('');
+    console.log({message})
 
     useEffect(() => {
-        fetch('/api/get')
+        console.log("CIAO")
+        fetch('http://localhost:3001/get')
             .then(response => response.json())
             .then(data => setMessage(data.message))
             .catch(error => console.error('Error:', error));

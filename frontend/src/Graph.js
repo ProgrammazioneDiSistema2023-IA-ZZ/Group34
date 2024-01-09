@@ -40,10 +40,11 @@ const FixedGraph = () => {
             console.log('Selected edges:', edges);
         },
     };
+    console.log({graph})
 
     return (
         <div style={{ height: '500px' }}>
-            <Graph graph={graph} options={options} events={events} />
+            <Graph key={crypto.randomUUID()} graph={graph} options={options} events={events} />
         </div>
     );
 };

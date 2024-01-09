@@ -71,7 +71,7 @@ impl ServerState {
 
 #[allow(dead_code)]
 pub fn start() -> std::io::Result<()> {
-    fs::remove_dir_all(STATEFUL_PATHS.folder)?;
+    let _ = fs::remove_dir_all(STATEFUL_PATHS.folder);
     fs::create_dir_all(STATEFUL_PATHS.folder)?;
     Ok(())
 }

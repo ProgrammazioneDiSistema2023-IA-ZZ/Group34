@@ -20,6 +20,7 @@ mod onnx_running_environment;
 mod operations;
 mod utils;
 mod stateful_backend_environment;
+use crate::utils::OnnxError;
 
 //legge da console un valore di risposa a una s/n function
 fn get_bool_from_console(prompt: &str) -> bool {
