@@ -164,9 +164,9 @@ pub fn get_path_from_ordinal(ordinal: usize) -> Option<ModelPats> {
     let index = ordinal - 1;
     let ending = MODEL_PATHS_ENDINGS[index];
     Some(ModelPats::new(
-        format!("models/{ending}/model.onnx"),
-        format!("models/{ending}/data_{ending}/input_0.pb"),
-        format!("models/{ending}/data_{ending}/output_0.pb"),
+        format!("src/models/{ending}/model.onnx"),
+        format!("src/models/{ending}/data_{ending}/input_0.pb"),
+        format!("src/models/{ending}/data_{ending}/output_0.pb"),
         ending.to_string()
     ))
 }

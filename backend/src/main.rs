@@ -106,7 +106,7 @@ pub fn main() {
         let mut use_custom_img = false;
         let mut path_img = "".to_string();
         if !is_def_test_set {
-            path_img = get_string_from_console("inserire il path dell'immagine che si vuole utilizzare\nl'immagine va inserita in images/nomeimmagine.formato");
+            path_img = get_string_from_console("inserire il path dell'immagine che si vuole utilizzare\nl'immagine va inserita in src/images/nomeimmagine.formato");
             use_custom_img = true
         }
 

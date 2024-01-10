@@ -60,7 +60,7 @@ mod js_binding {
     }
 }
 
-#[cfg(feature = "include_pyo3")]
+//#[cfg(feature = "include_pyo3")]
 mod python_binding {
     use pyo3::prelude::*;
 
@@ -156,7 +156,7 @@ mod python_binding {
                 let mut use_custom_img = false;
                 let mut path_img = "".to_string();
                 if !is_def_test_set {
-                    path_img = get_string_from_console("inserire il path dell'immagine che si vuole utilizzare\nl'immagine va inserita in src/nomeimmagine");
+                    path_img = get_string_from_console("inserire il path dell'immagine che si vuole utilizzare\nl'immagine va inserita in src/images/nomeimmagine.formato");
                     use_custom_img = true
                 }
 
