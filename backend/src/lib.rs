@@ -31,6 +31,7 @@ mod js_binding {
 
          */
 
+        /*
         // Convert GraphProto to a byte vector
         let mut buf = Vec::new();
         stateful_backend_environment::select_model(1).graph.unwrap().encode(&mut buf).expect("Failed to encode GraphProto");
@@ -44,6 +45,9 @@ mod js_binding {
         // Convert JSON value to a JSON string
         let json_string = serde_json::to_string_pretty(&json_value).expect("Failed to convert to JSON string");
         Ok(cx.string::<String>( json_string))
+
+         */
+        Ok(cx.string::<String>("".parse().unwrap()))
 
     }
 
