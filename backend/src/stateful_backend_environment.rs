@@ -46,9 +46,8 @@ impl ServerState {
     fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let json_data = to_string(self)?;
         let mut file = OpenOptions::new()
-            .create_new(true)
+            .create(true)
             .write(true)
-            .append(true)
             .open(STATEFUL_PATHS.state)?;
 
         file.write_all(json_data.as_bytes())?;

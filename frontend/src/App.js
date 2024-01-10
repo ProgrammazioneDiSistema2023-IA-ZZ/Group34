@@ -4,13 +4,15 @@ import FixedGraph from "./Graph";
 
 function App() {
     const [message, setMessage] = useState('');
-    console.log({message})
 
     useEffect(() => {
-        console.log("CIAO")
         fetch('http://localhost:3001/get')
             .then(response => response.json())
-            .then(data => setMessage(data.message))
+            .then((data) => {
+                setMessage(data.message)
+                console.log(JSON.parse(data.graph))
+
+            })
             .catch(error => console.error('Error:', error));
     }, []);
 

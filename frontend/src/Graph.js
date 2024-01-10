@@ -40,7 +40,7 @@ const FixedGraph = () => {
             console.log('Selected edges:', edges);
         },
     };
-    console.log({graph})
+    //console.log({graph})
 
     return (
         <div style={{ height: '500px' }}>
