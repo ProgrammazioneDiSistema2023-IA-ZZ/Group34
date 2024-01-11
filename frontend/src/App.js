@@ -36,6 +36,7 @@ function App() {
             })
             .catch(error => console.error('Error:', error));
     }, []);
+    let usenn = true; //change this flag to show the alternative layout
 
 
     return (
@@ -45,8 +46,8 @@ function App() {
 
                 <div>
                     <h1>Graph Visualization Example</h1>
-                    {/*<FixedGraph graph={graph}/>*/}
-                    {graph && graph.nodes.length > 10 && <NeuralNetwork graph={graph}/>}
+                    {!usenn && <FixedGraph graph={graph}/>}
+                    {usenn && graph && graph.nodes.length > 10 && <NeuralNetwork graph={graph}/>}
 
                 </div>
             </header>

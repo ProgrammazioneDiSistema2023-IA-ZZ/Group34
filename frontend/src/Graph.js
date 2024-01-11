@@ -7,7 +7,7 @@ const FixedGraph = (graph) => {
         //autoResize: true,
         layout: {
             //improvedLayout: true,
-            hierarchical: true
+            hierarchical: false
         },
         edges: {
             color: '#000000',
