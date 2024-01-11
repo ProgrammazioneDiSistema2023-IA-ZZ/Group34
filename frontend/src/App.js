@@ -46,7 +46,8 @@ function App() {
                 <div>
                     <h1>Graph Visualization Example</h1>
                     {/*<FixedGraph graph={graph}/>*/}
-                    {graph && graph.nodes.length === 69 && <NeuralNetwork graph={graph}/>}
+                    {graph && graph.nodes.length > 10 && <NeuralNetwork graph={graph}/>}
+
                 </div>
             </header>
         </div>

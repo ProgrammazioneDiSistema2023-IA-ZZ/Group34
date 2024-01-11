@@ -10,6 +10,7 @@ console.log(rust.start());
 
 app.use(cors());
 
+
 app.get('/get', (req, res) => {
   res.json({ message: 'Hello from Node.js backend!  && ', graph: rust.select_model(2)});
 });
@@ -17,3 +18,4 @@ app.get('/get', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+

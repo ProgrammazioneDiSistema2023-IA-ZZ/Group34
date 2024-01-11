@@ -115,12 +115,16 @@ function NeuralNetwork({graph}) {
                     node.position.y
                 );
 
+                //Calcola il numero di figli dell'ancestor
+                let ancestor = getAncestors(node.id)[0];
+                let n_ancestor_children = edges.filter((edge) => edge.source === ancestor).length;
+
                 return {
                     ...node,
                     position: {
                         ...node.position ,
-                        x: node.position.x + 50 * getAncestors(node.id) && getAncestors(node.id)[0].id,//todo compute the children of its anchestor
-                        y: newY + verticalSpacing + 50 * node.id,
+                        x: node.position.x + 200 *  n_ancestor_children,//todo compute the children of its anchestor
+                        y: newY + verticalSpacing + 100 * node.id,
                     },
                 };
             });

@@ -69,7 +69,7 @@ mod js_binding {
                 for input in &node_proto.input {
                     if let Some(&from_id) = node_id_map.get(&node_proto.name) {
                         if let Some(&to_id) = node_id_map.get(input) {
-                            edges.push(JsonEdge { from: from_id, to: to_id });
+                            edges.push(JsonEdge { from: to_id , to: from_id });
                         }
                     }
                 }
