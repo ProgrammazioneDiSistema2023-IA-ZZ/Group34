@@ -5,6 +5,7 @@ use ndarray::prelude::*;
 use rand::{Rng, SeedableRng};
 // Funzione pubblica per l'implementazione del dropout in un grafo ONNX.
 // Il dropout è una tecnica di regolarizzazione utilizzata durante l'addestramento dei modelli di apprendimento automatico.
+#[allow(unreachable_patterns)]
 pub fn dropout(
     input: Vec<TensorProto>,
     initializers: Vec<TensorProto>,

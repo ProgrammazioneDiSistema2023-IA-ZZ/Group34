@@ -26,6 +26,7 @@ use std::collections::{HashMap, LinkedList};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Instant;
+#[allow(unused_imports)]
 use tract_onnx::prelude::tract_itertools::Itertools;
 pub struct OnnxRunningEnvironment {
     input_tensor: TensorProto,
@@ -34,7 +35,7 @@ pub struct OnnxRunningEnvironment {
     model: ModelProto,
     node_io_vec: Vec<NodeIO>,
 }
-
+#[allow(unused)]
 impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
@@ -279,9 +280,11 @@ impl OnnxRunningEnvironment {
     }
 }
 
+#[allow(dead_code)]
 pub struct OnnxModelEditor {}
 
 impl OnnxModelEditor {
+    #[allow(dead_code)]
     pub fn remove_node(node_name: String, model: ModelProto) -> ModelProto {
         let mut node_map: LinkedList<NodeProto> = LinkedList::new();
         for node in model.clone().graph.unwrap().node {
@@ -321,7 +324,7 @@ impl OnnxModelEditor {
         };
         return model_new;
     }
-
+    #[allow(dead_code)]
     pub fn insert_node(
         node_name: String,
         input: Vec<String>,
@@ -408,7 +411,7 @@ impl OnnxModelEditor {
         // };
         return model_new;
     }
-
+    #[allow(dead_code)]
     pub fn modify_node(
         node_name: String,
         model: ModelProto,
@@ -515,7 +518,7 @@ fn find_and_do_operation(
         )),
     }
 }
-
+#[allow(dead_code)]
 enum OperationType {
     ADD,
     RELU,
@@ -557,6 +560,7 @@ impl NodeProto {
     }
 }
 impl ModelProto {
+    #[allow(dead_code)]
     pub fn new(
         ir_version: i64,
         opset_import: Vec<OperatorSetIdProto>,
@@ -586,6 +590,7 @@ impl ModelProto {
     }
 }
 impl GraphProto {
+    #[allow(dead_code)]
     pub fn new(
         node: Vec<NodeProto>,
         name: String,

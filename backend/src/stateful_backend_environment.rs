@@ -1,8 +1,10 @@
+#[allow(unused_imports)]
 use crate::{
     onnx::{attribute_proto, AttributeProto, ModelProto},
     onnx_running_environment::OnnxModelEditor,
     utils::{decode_message, get_path_from_ordinal, write_message,OnnxError},
 };
+#[allow(unused_imports)]
 use protobuf::Error;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
@@ -11,6 +13,7 @@ use std::{
     io::{Read, Write},
     path::Path,
 };
+#[allow(unused_imports)]
 use tract_onnx::model;
 
 struct StatefulPaths {
@@ -98,7 +101,7 @@ pub fn get_model() -> ModelProto {
 pub fn get_state() -> ServerState {
     ServerState::new()
 }
-
+#[allow(dead_code)]
 pub fn create_node(
     node_name: String,
     input: Vec<String>,

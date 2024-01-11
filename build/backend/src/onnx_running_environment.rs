@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::onnx::{self, GraphProto, ModelProto, NodeProto, TensorProto};
 use crate::operations::add;
 use crate::operations::batch_norm;
@@ -7,6 +8,7 @@ use crate::operations::dropout;
 use crate::operations::exp;
 use crate::operations::flatten;
 use crate::operations::gemm;
+#[allow(unused_imports)]
 use crate::operations::global_average_pool::{self, globalavgpool};
 use crate::operations::lrn;
 use crate::operations::matmul;
@@ -15,13 +17,17 @@ use crate::operations::reducesum;
 use crate::operations::relu;
 use crate::operations::reshape;
 use crate::operations::softmax;
+#[allow(unused_imports)]
 use crate::utils::get_random_float_tensor;
 use crate::OnnxError;
+#[allow(unused_imports)]
 use image::flat::Error;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Instant;
+#[allow(unused_imports)]
 use tract_onnx::prelude::tract_itertools::Itertools;
+#[allow(dead_code)]
 pub struct OnnxRunningEnvironment {
     input_tensor: TensorProto,
     input_senders: Vec<Sender<TensorProto>>,
@@ -29,7 +35,7 @@ pub struct OnnxRunningEnvironment {
     model: ModelProto,
     node_io_vec: Vec<NodeIO>,
 }
-
+#[allow(unused)]
 impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
@@ -160,7 +166,7 @@ pub fn get_inputs(
     }
     inputs
 }
-
+#[allow(unused)]
 pub fn is_input_reading_finished(
     inputs_and_initializers_to_read_names: Vec<String>,
     initializers_names: Vec<String>,
@@ -250,7 +256,7 @@ fn find_and_do_operation(
         _ => Err(OnnxError::UnsupportedOperation("Operazione non supportata".to_string())),
     }
 }
-
+#[allow(dead_code)]
 enum OperationType {
     ADD,
     RELU,

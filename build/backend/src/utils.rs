@@ -1,7 +1,7 @@
 use rand::{Rng, thread_rng};
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
-
+#[allow(unused)]
 pub fn get_random_float_tensor(dims: Vec<i64>) -> TensorProto{
 
     // Generate random data

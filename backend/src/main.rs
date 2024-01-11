@@ -12,7 +12,7 @@ use crate::utils::decode_message;
 use crate::utils::CLASSES_NAMES;
 use crate::utils::get_path_from_ordinal;
 use operations::utils::tensor_proto_to_ndarray;
-
+#[allow(unused_imports)]
 use std::io::{self, Read, Write};
 use tract_onnx::tract_core::tract_data::itertools::Itertools;
 
@@ -20,6 +20,7 @@ mod onnx_running_environment;
 mod operations;
 mod utils;
 mod stateful_backend_environment;
+#[allow(unused_imports)]
 use crate::utils::OnnxError;
 
 //legge da console un valore di risposa a una s/n function
@@ -117,8 +118,8 @@ pub fn main() {
         let mut input_tensor: TensorProto = decode_message(&path.test);
         // uso immagine
         if use_custom_img {
-            let arrD_img = convert_img(path_img.to_string());
-            input_tensor = ndarray_to_tensor_proto::<f32>(arrD_img, "data").unwrap();
+            let arr_d_img = convert_img(path_img.to_string());
+            input_tensor = ndarray_to_tensor_proto::<f32>(arr_d_img, "data").unwrap();
         }
 
         println!("starting Network...");

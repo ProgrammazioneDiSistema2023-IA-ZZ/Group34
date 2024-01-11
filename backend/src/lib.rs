@@ -3,11 +3,15 @@ pub mod onnx;
 pub mod onnx_running_environment;
 pub mod operations;
 pub mod utils;
+#[allow(unused_imports)]
 use crate::utils::OnnxError;
 mod js_binding {
     use neon::prelude::*;
+    #[allow(unused_imports)]
     use prost::Message;
+    #[allow(unused_imports)]
     use serde::Serialize;
+    #[allow(unused_imports)]
     use serde_json::json;
     use crate::onnx::GraphProto;
     use crate::stateful_backend_environment;

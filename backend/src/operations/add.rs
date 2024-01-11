@@ -1,5 +1,6 @@
 use crate::{operations::utils::{convert_to_output_tensor, tensor_proto_to_ndarray}, onnx::{TensorProto, NodeProto}, utils::OnnxError};
 use ndarray::prelude::*;
+#[allow(irrefutable_let_patterns)]
 pub fn add(
     inputs: Vec<TensorProto>,
     initializers: Vec<TensorProto>,

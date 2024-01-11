@@ -1,11 +1,11 @@
+#[allow(unused_imports)]
 use crate::onnx::{attribute_proto, tensor_proto};
 use crate::utils::OnnxError;
-use crate::{
-    onnx::{
+#[allow(unused_imports)]
+use crate::onnx::{
         attribute_proto::AttributeType, tensor_proto::DataType, AttributeProto, GraphProto,
         NodeProto, TensorProto,
-    },
-};
+    };
 use ndarray::*;
 use std::collections::HashMap;
 

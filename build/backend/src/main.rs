@@ -6,19 +6,26 @@ mod onnx {
 use crate::onnx::tensor_proto::DataType;
 use crate::onnx::TensorProto;
 use crate::onnx_running_environment::OnnxRunningEnvironment;
+#[allow(unused_imports)]
 use core::fmt;
+#[allow(unused_imports)]
 use ndarray::{arr2, s, Array, Array2, Array4, ArrayD, ArrayView, Axis, Dimension, IxDyn, Zip};
 use onnx::tensor_proto::DataLocation;
 use onnx::ModelProto;
 use operations::utils::tensor_proto_to_ndarray;
+#[allow(unused_imports)]
 use rand::prelude::*;
 use std::any::type_name;
+#[allow(unused_imports)]
 use std::error::Error;
 use std::fs::File;
+#[allow(unused_imports)]
 use std::io::{self, ErrorKind, Read, Write};
+#[allow(unused_imports)]
 use std::ops::Index;
 use std::process::exit;
 use tract_onnx::pb::AttributeProto;
+#[allow(unused_imports)]
 use tract_onnx::prelude::tract_itertools::Itertools;
 
 mod onnx_running_environment;
@@ -223,7 +230,7 @@ fn print_results(tensor: TensorProto) {
 
     println!("{:?}", top_5_peak_classes);
 }
-
+#[allow(dead_code)]
 fn read_input(input: &str) {
     // Path to your .pb file da concatenare
     let file_path = input;
@@ -302,12 +309,13 @@ fn squeezenet_load_output() -> &'static str {
     let path_output = "src/squeezenet/data_squeezenet/output_0.pb";
     return path_output;
 }
+#[allow(dead_code)]
 struct Operation {
     op_type: OperationType,
     input: Vec<TensorProto>,
     op_attributes: Vec<AttributeProto>,
 }
-
+#[allow(dead_code)]
 fn from<T>(array: ArrayD<T>, name: String) -> Result<TensorProto, OnnxError>
 where
     T: Into<f32> + Into<f64> + Into<i32> + Into<i64>,
@@ -403,7 +411,7 @@ impl TensorProto {
         ::std::default::Default::default()
     }
 }
-
+#[allow(dead_code)]
 enum OperationType {
     ADD,
     RELU,
@@ -422,11 +430,11 @@ enum OperationType {
     GLOBALAVGPOOL,
     LRN,
 }
-
+#[allow(dead_code)]
 fn type_of<T>(_: T) -> &'static str {
     type_name::<T>()
 }
-
+#[allow(dead_code)]
 fn into<T>(tensor: TensorProto) -> Result<ArrayD<T>, std::io::Error>
 where
     T: From<f32>,
