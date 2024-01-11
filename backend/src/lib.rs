@@ -7,7 +7,9 @@ use crate::utils::OnnxError;
 mod js_binding {
     use neon::prelude::*;
     use prost::Message;
+    use serde::Serialize;
     use serde_json::json;
+    use crate::onnx::GraphProto;
     use crate::stateful_backend_environment;
 
     fn hello(mut cx: FunctionContext) -> JsResult<JsString> {
@@ -24,7 +26,63 @@ mod js_binding {
         //Ok(cx.boolean(stateful_backend_environment::start().is_ok()))
     }
 
+    #[derive(Serialize)]
+    struct JsonNode {
+        id: u32,
+        label: String,
+    }
+
+    #[derive(Serialize)]
+    struct JsonEdge {
+        from: u32,
+        to: u32,
+    }
+
+    #[derive(Serialize)]
+    struct JsonResult {
+        nodes: Vec<JsonNode>,
+        edges: Vec<JsonEdge>,
+    }
+
+    impl From<&GraphProto> for JsonResult {
+        fn from(graph_proto: &GraphProto) -> Self {
+            let mut node_id_counter = 1;
+            let mut node_id_map = std::collections::HashMap::new();
+            let mut nodes = Vec::new();
+            let mut edges = Vec::new();
+
+            // Convert nodes
+            for node_proto in &graph_proto.node {
+                let label = node_proto.name.clone();
+                let id = node_id_counter;
+                node_id_map.insert(node_proto.name.clone(), id);
+                node_id_counter += 1;
+                nodes.push(JsonNode { id, label });
+            }
+
+            // Convert edges
+            for node_proto in &graph_proto.node {
+                for input in &node_proto.input {
+                    if let Some(&from_id) = node_id_map.get(&node_proto.name) {
+                        if let Some(&to_id) = node_id_map.get(input) {
+                            edges.push(JsonEdge { from: from_id, to: to_id });
+                        }
+                    }
+                }
+            }
+
+            JsonResult { nodes, edges }
+        }
+    }
+
     fn select_model(mut cx: FunctionContext) -> JsResult<JsString> {
+        let n_model = cx.argument::<JsNumber>(0)?.value(&mut cx);
+        let graph = stateful_backend_environment::select_model(n_model as usize).graph.unwrap();
+        // Convert GraphProto to JSON structure
+        let json_result: JsonResult = (&graph).into();
+
+        // Convert the JsonResult to JSON string
+        let json_string = serde_json::to_string(&json_result).expect("Failed to convert to JSON string");
         /*
         let a = stateful_backend_environment::select_model(1).graph.unwrap().as_bytes();
         Ok(cx.string::<String>( Message::decode(&a[..]).unwrap()))
@@ -47,7 +105,7 @@ mod js_binding {
         Ok(cx.string::<String>( json_string))
 
          */
-        Ok(cx.string::<String>("".parse().unwrap()))
+        Ok(cx.string::<String>(json_string))
 
     }
 
@@ -60,7 +118,7 @@ mod js_binding {
     }
 }
 
-//#[cfg(feature = "include_pyo3")]
+#[cfg(feature = "include_pyo3")]
 mod python_binding {
     use pyo3::prelude::*;
 

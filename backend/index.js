@@ -11,7 +11,7 @@ console.log(rust.start());
 app.use(cors());
 
 app.get('/get', (req, res) => {
-  res.json({ message: 'Hello from Node.js backend!  && ', graph: rust.select_model()});
+  res.json({ message: 'Hello from Node.js backend!  && ', graph: rust.select_model(2)});
 });
 
 app.listen(port, () => {
