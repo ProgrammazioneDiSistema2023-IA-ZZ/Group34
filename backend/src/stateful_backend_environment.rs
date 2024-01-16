@@ -73,6 +73,7 @@ impl ServerState {
     }
 }
 
+#[derive(Serialize)]
 pub struct NodeDto {
     node_name: String,
     input: Vec<String>,
@@ -141,6 +142,8 @@ pub fn get_node(node_name: String) -> NodeDto {
         name_node_after: "".to_string(),
     }
 }
+
+
 
 #[allow(dead_code)]
 pub fn create_node(node_dto: NodeDto) -> ModelProto {

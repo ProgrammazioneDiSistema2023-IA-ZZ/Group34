@@ -1,0 +1,1 @@
+{"model_name":"mobilenet","default_input_path":"src/models/mobilenet/data_mobilenet/input_0.pb","default_output_pat":"src/models/mobilenet/data_mobilenet/output_0.pb"}

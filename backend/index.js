@@ -8,6 +8,7 @@ const rust = require('.');
 console.log(rust.hello());
 console.log(rust.start());
 
+
 app.use(cors());
 
 

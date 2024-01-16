@@ -118,12 +118,19 @@ mod js_binding {
         Ok(cx.string(result))
     }
 
+    fn get_node_js(mut cx: FunctionContext) -> JsResult<JsString>{
+        let node_dto = stateful_backend_environment::get_node(cx.argument::<JsString>(0)?.value(&mut cx));
+        let result = serde_json::to_string(&node_dto).expect("Failed to serialize to JSON");
+        Ok(cx.string(result))
+    }
+
     #[neon::main]
     fn main_js(mut cx: ModuleContext) -> NeonResult<()> {
         cx.export_function("hello", hello)?;
         cx.export_function("start", start)?;
         cx.export_function("select_model", select_model)?;
         cx.export_function("run", run)?;
+        cx.export_function("get_node_js", get_node_js)?;
         Ok(())
     }
 }
