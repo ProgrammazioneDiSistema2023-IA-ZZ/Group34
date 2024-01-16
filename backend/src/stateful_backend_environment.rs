@@ -2,7 +2,7 @@
 use crate::{
     onnx::{attribute_proto, AttributeProto, ModelProto},
     onnx_running_environment::OnnxModelEditor,
-    utils::{decode_message, get_path_from_ordinal, write_message,OnnxError},
+    utils::{decode_message, get_path_from_ordinal, write_message, OnnxError},
 };
 #[allow(unused_imports)]
 use protobuf::Error;
@@ -164,6 +164,71 @@ pub fn create_node(
             .iter()
             .find(|x| x.name == name_node_after)
             .map(|x| x.clone()),
-        model
+        model,
+    )
+}
+
+#[allow(dead_code)]
+pub fn modify_node(
+    node_name: String,
+    input: Vec<String>,
+    initializers: Vec<String>,
+    output: Vec<String>,
+    operation_type: String,
+    domain: String,
+    attributes: Vec<(String, attribute_proto::AttributeType, String)>,
+    doc_string: String,
+    name_node_before: String,
+    name_node_after: String,
+) -> ModelProto {
+    let model = get_model();
+
+    let mut attributes_proto = Vec::new();
+    for attr in attributes {
+        let (attribute_name, attribute_type, attribute_value) = attr;
+
+        let mut attrbute_proto = AttributeProto {
+            ..Default::default()
+        };
+        attrbute_proto.name = attribute_name;
+        attrbute_proto.r#type = attribute_type as i32;
+        match attribute_type {
+            attribute_proto::AttributeType::Float => {
+                attrbute_proto.f = attribute_value.parse().unwrap()
+            }
+            attribute_proto::AttributeType::Int => {
+                attrbute_proto.i = attribute_value.parse().unwrap()
+            }
+            attribute_proto::AttributeType::String => {
+                attrbute_proto.s = attribute_value.into_bytes()
+            }
+            _ => {}
+        }
+
+        attributes_proto.push(attrbute_proto)
+    }
+
+    OnnxModelEditor::modify_node(
+        node_name,
+        input,
+        initializers,
+        output,
+        operation_type,
+        domain,
+        attributes_proto,
+        doc_string,
+        model,
+    )
+}
+
+#[allow(dead_code)]
+pub fn remove_node(
+    node_name: String,
+) -> ModelProto {
+    let model = get_model();
+
+    OnnxModelEditor::remove_node(
+        node_name,
+        model,
     )
 }

@@ -414,7 +414,6 @@ impl OnnxModelEditor {
     #[allow(dead_code)]
     pub fn modify_node(
         node_name: String,
-        model: ModelProto,
         input: Vec<String>,
         _initializers: Vec<String>,
         output: Vec<String>,
@@ -422,8 +421,9 @@ impl OnnxModelEditor {
         domain: String,
         attribute: Vec<AttributeProto>,
         doc_string: String,
+        model: ModelProto,
     ) -> ModelProto {
-        let mut node_map: LinkedList<NodeProto> = LinkedList::new();
+        let mut node_map: LinkedList<&NodeProto> = LinkedList::new();
         let node_to_insert = NodeProto::new(
             input,
             output,
@@ -433,40 +433,21 @@ impl OnnxModelEditor {
             attribute,
             doc_string,
         );
-        for node in model.clone().graph.unwrap().node {
+        for node in &model.graph.as_ref().unwrap().node {
             // inserisco nella mappa nodi con chiave nome
             if node.name == node_name {
                 //nodo da modificare
                 // inserisco nella lista il nodo modificato
-                node_map.push_back(node_to_insert.clone());
+                node_map.push_back(&node_to_insert);
             } else {
                 node_map.push_back(node);
             }
         }
-        let graph = GraphProto {
-            node: node_map.into_iter().collect(),
-            name: model.clone().graph.unwrap().name,
-            initializer: model.clone().graph.unwrap().initializer,
-            sparse_initializer: model.clone().graph.unwrap().sparse_initializer,
-            doc_string: model.clone().graph.unwrap().doc_string,
-            input: model.clone().graph.unwrap().input,
-            output: model.clone().graph.unwrap().output,
-            value_info: model.clone().graph.unwrap().value_info,
-            quantization_annotation: model.clone().graph.unwrap().quantization_annotation,
-        };
-        let model_new = ModelProto {
-            ir_version: model.ir_version,
-            opset_import: model.opset_import, //opset_import,
-            producer_name: model.producer_name,
-            producer_version: model.producer_version,
-            domain: model.domain,
-            model_version: model.model_version,
-            doc_string: model.doc_string,
-            graph: Some(graph),
-            metadata_props: model.metadata_props, // Aggiungere eventuali proprietà metadata
-            training_info: model.training_info, // Aggiungere eventuali informazioni di addestramento
-            functions: model.functions,         // Aggiungere eventuali funzioni locali
-        };
+
+        let mut model_new = model.clone();
+        let mut graph = model_new.graph.unwrap();
+        graph.node = node_map.into_iter().map(|x| x.clone()).collect();
+        model_new.graph = Some(graph);
         return model_new;
     }
 }
