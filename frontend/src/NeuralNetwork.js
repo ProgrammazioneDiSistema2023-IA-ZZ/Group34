@@ -6,8 +6,10 @@ import ReactFlow, {
     ConnectionLineType,
 } from "react-flow-renderer";
 import {Button, Form, Modal, Spinner} from "react-bootstrap";
+import ModifyNodeModal from "./ModifyNodeModal";
 
 function NeuralNetwork({graph}) {
+    console.log(graph)
     const verticalSpacing = 10;
     const [selectedNode, setSelectedNode] = useState(null);
 
@@ -35,7 +37,6 @@ function NeuralNetwork({graph}) {
     const [Snodes, setSNodes, onSNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if(graph){
@@ -75,6 +76,17 @@ function NeuralNetwork({graph}) {
             ),
         [setEdges]
     );
+
+    function onNodeClick(event, node){
+        fetch('http://localhost:3001/node/' + node.data.label)
+            .then(response => response.json())
+            .then((data) => {
+                console.log(JSON.parse(data.graph))
+                setIsModalVisible(true)
+                setSelectedNode(JSON.parse(data.graph));
+            })
+            .catch(error => console.error('Error:', error));
+    }
 
 
     useEffect(() => {
@@ -140,7 +152,6 @@ function NeuralNetwork({graph}) {
     const getNodeId = () => Math.random();
 
     const onInit = () => {
-        setLoading(false);
         console.log("Logged");
     };
 
@@ -178,6 +189,7 @@ function NeuralNetwork({graph}) {
                     Add Custom Name Node
                 </Button>
 
+
                 <ReactFlow
                     nodes={Snodes}
                     edges={edges}
@@ -189,31 +201,13 @@ function NeuralNetwork({graph}) {
                     attributionPosition="bottom-left"
                     connectionLineType={ConnectionLineType.SmoothStep}
                     elementsSelectable={true}
-                    onNodeClick={(event, node) => {
-                        setIsModalVisible(true)
-                        setSelectedNode(node);
-                    }}
+                    onNodeClick={onNodeClick}
                 />
 
 
             </div>
 
-            <Modal show={isModalVisible} size={"lg"} onHide={handleCancel}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{selectedNode ? "Edit node: " + selectedNode.data.label : "Create new node"}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <p>Modal content goes here...</p>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleCancel}>
-                        Close
-                    </Button>
-                    <Button variant="primary" onClick={handleCancel}>
-                        Save Changes
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            <ModifyNodeModal show={isModalVisible} onHide={handleCancel} nodeData={selectedNode} nodes={graph.nodes}/>
         </>
     );
 }

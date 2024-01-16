@@ -30,4 +30,4 @@ COPY index.js ./
 COPY package-lock.json ./
 COPY src ./src
 COPY Cargo.toml ./
-CMD ["pwd"]
+CMD ["sleep", "15d"]

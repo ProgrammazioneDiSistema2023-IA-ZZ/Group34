@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import FixedGraph from "./Graph";
 import NeuralNetwork from "./NeuralNetwork";
-import {Button, Col, Container, Row, Form} from "react-bootstrap";
+import {Button, Col, Container, Row, Form, Spinner} from "react-bootstrap";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {FaFileDownload, FaPlay} from "react-icons/fa";
 
@@ -9,14 +9,17 @@ import {FaFileDownload, FaPlay} from "react-icons/fa";
 
 function App() {
     const [message, setMessage] = useState('');
-    const [selectedGraph, setSelectedGraph] = useState(null);
+    const [selectedGraph, setSelectedGraph] = useState("");
     const [graph, setGraph] = useState({nodes: [], edges: []});
-    console.log(graph)
+    const [nodeList , setNodeList] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     function onLoad(){
+        setLoading(true);
         fetch('http://localhost:3001/model/' + selectedGraph)
             .then(response => response.json())
             .then((data) => {
+                setLoading(false);
                 setMessage(data.message)
                 setGraph(() => JSON.parse(data.graph))
 
@@ -24,7 +27,7 @@ function App() {
             .catch(error => console.error('Error:', error));
     }
     function onRun(){
-        fetch('http://localhost:3001/model/run')
+        fetch('http://localhost:3001/runmodel')
             .then(response => response.json())
             .then((data) => {
                 console.log({data})
@@ -52,7 +55,7 @@ function App() {
                             <Form.Label>Select Graph:</Form.Label>
                             <Form.Control as="select" onChange={(e) => setSelectedGraph(e.target.value)}
                                           value={selectedGraph}>
-                                <option value={null}>-- Select Graph --</option>
+                                <option value={""}>-- Select Graph --</option>
                                 <option value="1">Mobilenet</option>
                                 <option value="2">Resnet</option>
                                 <option value="3">Squeezenet</option>
@@ -73,15 +76,23 @@ function App() {
                     </Col>
                 </Row>
 
+
+                {loading && <div className="d-flex align-items-center justify-content-center vh-100">
+                    <Spinner animation="border" variant="primary" role="status">
+                        <span className="sr-only"/>
+                    </Spinner>
+                </div>
+
+
+                }
                 <Row className="mt-4">
                     <Col>
-                        {graph && graph.nodes.length > 10 && (
-                            <div className="border p-3">
-                                <NeuralNetwork graph={graph}/>
-                            </div>
-                        )}
+                        <div className="border p-3">
+                            <NeuralNetwork graph={graph} setLoading={setLoading}/>
+                        </div>
                     </Col>
                 </Row>
+
             </Container>
         </div>
     );

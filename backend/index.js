@@ -16,7 +16,7 @@ app.get('/model/:ordinal', (req, res) => {
   res.json({graph: rust.select_model(parseInt(req.params.ordinal))});
 });
 
-app.get('/model/run', (req, res) => {
+app.get('/runmodel', (req, res) => {
   res.json({result: rust.run()});
 });
 app.get('/node/:nodeName', (req, res) => {
