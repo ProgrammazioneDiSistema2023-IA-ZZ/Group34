@@ -113,11 +113,17 @@ mod js_binding {
 
     }
 
+    fn run(mut cx: FunctionContext) -> JsResult<JsString>{
+        let result = stateful_backend_environment::run();
+        Ok(cx.string(result))
+    }
+
     #[neon::main]
     fn main_js(mut cx: ModuleContext) -> NeonResult<()> {
         cx.export_function("hello", hello)?;
         cx.export_function("start", start)?;
         cx.export_function("select_model", select_model)?;
+        cx.export_function("run", run)?;
         Ok(())
     }
 }

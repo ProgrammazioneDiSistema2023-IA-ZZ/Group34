@@ -415,7 +415,6 @@ impl OnnxModelEditor {
     pub fn modify_node(
         node_name: String,
         input: Vec<String>,
-        _initializers: Vec<String>,
         output: Vec<String>,
         operation_type: String,
         domain: String,
