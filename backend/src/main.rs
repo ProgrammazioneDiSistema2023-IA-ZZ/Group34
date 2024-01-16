@@ -11,6 +11,7 @@ use crate::utils::convert_img;
 use crate::utils::decode_message;
 use crate::utils::CLASSES_NAMES;
 use crate::utils::get_path_from_ordinal;
+use crate::utils::results_to_string;
 use operations::utils::tensor_proto_to_ndarray;
 #[allow(unused_imports)]
 use std::io::{self, Read, Write};
@@ -128,34 +129,18 @@ pub fn main() {
         if is_run_par_enabled {
             let pred_out = new_env.run(is_run_par_enabled); //predicted output par
             println!("Predicted classes:");
-            print_results(pred_out);
+            println!("{}",results_to_string(pred_out));
         } else {
             let pred_out = new_env.run_sequential(is_run_par_enabled); //predicted output seq
             println!("Predicted classes:");
-            print_results(pred_out);
+            println!("{}",results_to_string(pred_out));
         }
 
         if !use_custom_img {
             let output_tensor: TensorProto = decode_message(&path.output);
             println!("\nGround truth classes:");
-            print_results(output_tensor);
+            println!("{}",results_to_string(output_tensor));
         }
-    }
-}
-
-fn print_results(tensor: TensorProto) {
-    let data = tensor_proto_to_ndarray::<f32>(&tensor).unwrap();
-
-    for element in data
-        .iter()
-        .enumerate()
-        .sorted_by(|a, b| b.1.total_cmp(a.1))
-        .take(3)
-    {
-        print!(
-            "|Class n:{} Value:{}| ",
-            CLASSES_NAMES[element.0], element.1
-        );
     }
 }
 /*

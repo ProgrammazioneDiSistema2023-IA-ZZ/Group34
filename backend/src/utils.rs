@@ -1,8 +1,9 @@
-use crate::onnx::tensor_proto::DataType;
+use crate::{onnx::tensor_proto::DataType, operations::utils::tensor_proto_to_ndarray};
 use crate::onnx::TensorProto;
 use image::{imageops, GenericImageView};
 use ndarray::{Array, Array2, Array3, Array4, ArrayD, Axis};
 use rand::{thread_rng, Rng};
+use tract_onnx::tract_core::tract_data::itertools::Itertools;
 
 const MIN: u32 = 256;
 const CROP: u32 = 224;
@@ -169,6 +170,24 @@ pub fn get_path_from_ordinal(ordinal: usize) -> Option<ModelPats> {
         format!("src/models/{ending}/data_{ending}/output_0.pb"),
         ending.to_string()
     ))
+}
+
+pub fn results_to_string(tensor: TensorProto) -> String {
+    let mut str = String::new();
+    let data = tensor_proto_to_ndarray::<f32>(&tensor).unwrap();
+
+    for element in data
+        .iter()
+        .enumerate()
+        .sorted_by(|a, b| b.1.total_cmp(a.1))
+        .take(3)
+    {
+        str += &format!(
+            "|Class n:{} Value:{}| ",
+            CLASSES_NAMES[element.0], element.1
+        );
+    }
+    str
 }
 
 //classi prese da imagenet
