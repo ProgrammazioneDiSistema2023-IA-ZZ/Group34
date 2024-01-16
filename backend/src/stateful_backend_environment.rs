@@ -119,6 +119,7 @@ pub fn get_state() -> ServerState {
     ServerState::new()
 }
 
+#[allow(dead_code)]
 pub fn get_node(node_name: String) -> NodeDto {
     let model = get_model();
     let node_proto = model
