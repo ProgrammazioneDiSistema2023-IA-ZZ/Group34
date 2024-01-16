@@ -1,33 +1,20 @@
 import React, {useState, useEffect} from 'react';
 import FixedGraph from "./Graph";
 import NeuralNetwork from "./NeuralNetwork";
+import {Button, Col, Container, Row, Form} from "react-bootstrap";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import {FaFileDownload, FaPlay} from "react-icons/fa";
 
 //import './App.css';
 
 function App() {
     const [message, setMessage] = useState('');
-    const [graph, setGraph] = useState({
-        nodes: [
-            {id: 1, label: 'Node 1'},
-            {id: 2, label: 'Node 2'},
-            {id: 3, label: 'Node 3'},
-            {id: 4, label: 'Node 4'},
-            {id: 5, label: 'Node 5'},
-            {id: 6, label: 'Node 6'},
-        ],
-        edges: [
-            {from: 1, to: 2},
-            {from: 1, to: 3},
-            {from: 2, to: 4},
-            {from: 3, to: 5},
-            {from: 4, to: 6},
-            {from: 5, to: 6},
-        ],
-    });
+    const [selectedGraph, setSelectedGraph] = useState(null);
+    const [graph, setGraph] = useState({nodes: [], edges: []});
     console.log(graph)
 
-    useEffect(() => {
-        fetch('http://localhost:3001/get')
+    function onLoad(){
+        fetch('http://localhost:3001/model/' + selectedGraph)
             .then(response => response.json())
             .then((data) => {
                 setMessage(data.message)
@@ -35,22 +22,59 @@ function App() {
 
             })
             .catch(error => console.error('Error:', error));
-    }, []);
+    }
+
+
     let usenn = true; //change this flag to show the alternative layout
 
 
     return (
         <div className="App">
-            <header className="App-header">
-                <p>Message: {message}</p>
 
-                <div>
-                    <h1>Graph Visualization Example</h1>
-                    {!usenn && <FixedGraph graph={graph}/>}
-                    {usenn && graph && graph.nodes.length > 10 && <NeuralNetwork graph={graph}/>}
+            <Container fluid>
+                <Row className="mb-4">
+                    <Col>
+                        <h1 className="text-center">Onnx Runtime Environment</h1>
+                    </Col>
+                </Row>
 
-                </div>
-            </header>
+                <Row className="mb-4">
+                    <Col className="text-center col-lg-10">
+                        <Form.Group controlId="selectGraph">
+                            <Form.Label>Select Graph:</Form.Label>
+                            <Form.Control as="select" onChange={(e) => setSelectedGraph(e.target.value)}
+                                          value={selectedGraph}>
+                                <option value={null}>-- Select Graph --</option>
+                                <option value="1">Mobilenet</option>
+                                <option value="2">Resnet</option>
+                                <option value="3">Squeezenet</option>
+                                <option value="4">Caffenet</option>
+                                <option value="5">Alexnet</option>
+                            </Form.Control>
+                        </Form.Group>
+                    </Col>
+                    <Col className="text-center col-lg-1">
+                        <Button variant="primary" className="mr-2" onClick={onLoad}>
+                            <FaFileDownload className="mr-1"/> Load
+                        </Button>
+                    </Col>
+                    <Col className="text-center col-lg-1">
+                        <Button variant="success">
+                            <FaPlay className="mr-1"/> Play
+                        </Button>
+                    </Col>
+                </Row>
+
+                <Row className="mt-4">
+                    <Col>
+                        {usenn && graph && graph.nodes.length > 10 && (
+                            <div className="border p-3">
+                                <NeuralNetwork graph={graph}/>
+                            </div>
+                        )}
+                    </Col>
+                </Row>
+            </Container>
         </div>
     );
 }

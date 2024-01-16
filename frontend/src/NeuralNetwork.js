@@ -1,62 +1,41 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, {useState, useCallback, useEffect} from "react";
 import ReactFlow, {
     addEdge,
     useNodesState,
     useEdgesState,
     ConnectionLineType,
 } from "react-flow-renderer";
-import { Button, Modal, Input, Form } from "antd";
+import {Button, Form, Modal, Spinner} from "react-bootstrap";
 
 function NeuralNetwork({graph}) {
-    const numNodes = 35;
     const verticalSpacing = 10;
+    const [selectedNode, setSelectedNode] = useState(null);
 
-    /*
-    const initialNodes = Array.from({ length: numNodes }, (_, index) => ({
-        id: `${index + 1}`,
-        data: {
-            label: `Node ${index + 1}`,
-        },
-        position: { x: 100, y: 100 + index * verticalSpacing },
-    }));
-    */
-
-    /*
-    const initialEdges = initialNodes.map((node, index) => ({
-        id: `e1-${index + 2}`,
-        source: "1",
-        target: `${index + 2}`,
-        type: "smoothstep",
-        animated: true,
-    }));
-     */
-
-    const initialNodes = graph && graph.nodes.map((node)=>{
+    const initialNodes = graph && graph.nodes.map((node) => {
         return {
             data: {
                 label: node.label
             },
             id: node.id + "",
-            position: {x:100, y:100}
+            position: {x: 100, y: 20}
         }
     });
 
     const initialEdges = graph && graph.edges.map((edge) => {
         return {
-            id: 'e'+edge.from+"-"+edge.to,
+            id: 'e' + edge.from + "-" + edge.to,
             source: edge.from + "",
             target: edge.to + "",
             type: 'smoothstep',
-            animated: false}
+            animated: false
+        }
     });
-
-    console.log({initialNodes})
-    console.log({initialEdges})
 
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [Snodes, setSNodes, onSNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const onConnect = useCallback(
         (params) =>
@@ -66,14 +45,13 @@ function NeuralNetwork({graph}) {
                         ...params,
                         type: ConnectionLineType.SmoothStep,
                         animated: true,
-                        style: { stroke: "red" },
+                        style: {stroke: "red"},
                     },
                     eds
                 )
             ),
         [setEdges]
     );
-
 
 
     useEffect(() => {
@@ -118,12 +96,13 @@ function NeuralNetwork({graph}) {
                 //Calcola il numero di figli dell'ancestor
                 let ancestor = getAncestors(node.id)[0];
                 let n_ancestor_children = edges.filter((edge) => edge.source === ancestor).length;
+                if (n_ancestor_children === 0) n_ancestor_children = 1;
 
                 return {
                     ...node,
                     position: {
-                        ...node.position ,
-                        x: node.position.x + 200 *  n_ancestor_children,//todo compute the children of its anchestor
+                        ...node.position,
+                        x: node.position.x + 200 * n_ancestor_children,//todo compute the children of its anchestor
                         y: newY + verticalSpacing + 100 * node.id,
                     },
                 };
@@ -138,6 +117,7 @@ function NeuralNetwork({graph}) {
     const getNodeId = () => Math.random();
 
     const onInit = () => {
+        setLoading(false);
         console.log("Logged");
     };
 
@@ -146,6 +126,7 @@ function NeuralNetwork({graph}) {
     };
 
     const handleCancel = () => {
+        setSelectedNode(null)
         setIsModalVisible(false);
     };
 
@@ -157,7 +138,7 @@ function NeuralNetwork({graph}) {
     const onAdd = (data) => {
         const newNode = {
             id: String(getNodeId()),
-            data: { label: data },
+            data: {label: data},
             position: {
                 x: 100,
                 y: 100 + nodes.length * verticalSpacing,
@@ -167,39 +148,50 @@ function NeuralNetwork({graph}) {
     };
 
     return (
-        <div style={{ height: "100vh", margin: "10px" }}>
-            <Modal
-                title="Basic Modal"
-                open={isModalVisible}
-                onCancel={handleCancel}
-            >
-                <Form onFinish={handleOk} autoComplete="off" name="new node">
-                    <Form.Item label="Node Name" name="nodeName">
-                        <Input />
-                    </Form.Item>
+        <>
+            <div style={{height: '100vh', margin: '10px'}}>
 
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit">
-                            Submit
-                        </Button>
-                    </Form.Item>
-                </Form>
+                <Button variant="primary" onClick={displayCustomNamedNodeModal}>
+                    Add Custom Name Node
+                </Button>
+
+                <ReactFlow
+                    nodes={Snodes}
+                    edges={edges}
+                    onNodesChange={onSNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onInit={onInit}
+                    fitView
+                    attributionPosition="bottom-left"
+                    connectionLineType={ConnectionLineType.SmoothStep}
+                    elementsSelectable={true}
+                    onNodeClick={(event, node) => {
+                        setIsModalVisible(true)
+                        setSelectedNode(node);
+                    }}
+                />
+
+
+            </div>
+
+            <Modal show={isModalVisible} size={"lg"} onHide={handleCancel}>
+                <Modal.Header closeButton>
+                    <Modal.Title>{selectedNode ? "Edit node: " + selectedNode.data.label : "Create new node"}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>Modal content goes here...</p>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={handleCancel}>
+                        Close
+                    </Button>
+                    <Button variant="primary" onClick={handleCancel}>
+                        Save Changes
+                    </Button>
+                </Modal.Footer>
             </Modal>
-            <Button type="primary" onClick={displayCustomNamedNodeModal}>
-                Add Custom Name Node
-            </Button>
-            <ReactFlow
-                nodes={Snodes}
-                edges={edges}
-                onNodesChange={onSNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                onInit={onInit}
-                fitView
-                attributionPosition="bottom-left"
-                connectionLineType={ConnectionLineType.SmoothStep}
-            />
-        </div>
+        </>
     );
 }
 
