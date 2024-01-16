@@ -73,7 +73,7 @@ impl ServerState {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct NodeDto {
     node_name: String,
     input: Vec<String>,

@@ -8,15 +8,19 @@ const rust = require('.');
 console.log(rust.hello());
 console.log(rust.start());
 
-
 app.use(cors());
 
 
 app.get('/model/:ordinal', (req, res) => {
-  res.json({graph: rust.select_model(req.params.ordinal)});
+  console.log(req.params.ordinal);
+  res.json({graph: rust.select_model(parseInt(req.params.ordinal))});
+});
+
+app.get('/node/:nodeName', (req, res) => {
+  res.json({graph: rust.get_node_js(req.params.nodeName)});
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log('Server is running on http://localhost:${port}');
 });
 

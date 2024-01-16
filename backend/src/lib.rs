@@ -14,7 +14,7 @@ mod js_binding {
     #[allow(unused_imports)]
     use serde_json::json;
     use crate::onnx::GraphProto;
-    use crate::stateful_backend_environment;
+    use crate::stateful_backend_environment::{self, NodeDto};
 
     fn hello(mut cx: FunctionContext) -> JsResult<JsString> {
         Ok(cx.string("hello node!!"))
@@ -124,6 +124,17 @@ mod js_binding {
         Ok(cx.string(result))
     }
 
+    fn create_node(mut cx: FunctionContext) -> JsResult<JsString>{
+        let node:NodeDto = serde_json::from_str(&cx.argument::<JsString>(0)?.value(&mut cx)).expect("Failed to serialize to JSON");
+        let graph = stateful_backend_environment::create_node(node).graph.unwrap();;
+        // Convert GraphProto to JSON structure
+        let json_result: JsonResult = (&graph).into();
+
+        // Convert the JsonResult to JSON string
+        let json_string = serde_json::to_string(&json_result).expect("Failed to convert to JSON string");
+        Ok(cx.string::<String>(json_string))
+    }
+
     #[neon::main]
     fn main_js(mut cx: ModuleContext) -> NeonResult<()> {
         cx.export_function("hello", hello)?;
@@ -131,6 +142,7 @@ mod js_binding {
         cx.export_function("select_model", select_model)?;
         cx.export_function("run", run)?;
         cx.export_function("get_node_js", get_node_js)?;
+        cx.export_function("create_node", create_node)?;
         Ok(())
     }
 }
