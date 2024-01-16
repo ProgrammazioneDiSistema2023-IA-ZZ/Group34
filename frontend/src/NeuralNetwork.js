@@ -11,7 +11,7 @@ function NeuralNetwork({graph}) {
     const verticalSpacing = 10;
     const [selectedNode, setSelectedNode] = useState(null);
 
-    const initialNodes = graph && graph.nodes.map((node) => {
+    let initialNodes = graph && graph.nodes.map((node) => {
         return {
             data: {
                 label: node.label
@@ -21,7 +21,7 @@ function NeuralNetwork({graph}) {
         }
     });
 
-    const initialEdges = graph && graph.edges.map((edge) => {
+    let initialEdges = graph && graph.edges.map((edge) => {
         return {
             id: 'e' + edge.from + "-" + edge.to,
             source: edge.from + "",
@@ -36,6 +36,29 @@ function NeuralNetwork({graph}) {
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if(graph){
+            setNodes(graph.nodes.map((node) => {
+                return {
+                    data: {
+                        label: node.label
+                    },
+                    id: node.id + "",
+                    position: {x: 100, y: 20}
+                }
+            }))
+            setEdges(graph.edges.map((edge) => {
+                return {
+                    id: 'e' + edge.from + "-" + edge.to,
+                    source: edge.from + "",
+                    target: edge.to + "",
+                    type: 'smoothstep',
+                    animated: false
+                }
+            }));
+        }
+    }, [graph]);
 
     const onConnect = useCallback(
         (params) =>
@@ -149,7 +172,7 @@ function NeuralNetwork({graph}) {
 
     return (
         <>
-            <div style={{height: '100vh', margin: '10px'}}>
+            <div style={{height: '80vh', margin: '10px'}}>
 
                 <Button variant="primary" onClick={displayCustomNamedNodeModal}>
                     Add Custom Name Node

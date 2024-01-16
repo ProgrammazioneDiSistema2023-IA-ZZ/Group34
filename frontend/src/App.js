@@ -23,6 +23,14 @@ function App() {
             })
             .catch(error => console.error('Error:', error));
     }
+    function onRun(){
+        fetch('http://localhost:3001/model/run')
+            .then(response => response.json())
+            .then((data) => {
+                console.log({data})
+            })
+            .catch(error => console.error('Error:', error));
+    }
 
 
     let usenn = true; //change this flag to show the alternative layout
@@ -59,7 +67,7 @@ function App() {
                         </Button>
                     </Col>
                     <Col className="text-center col-lg-1">
-                        <Button variant="success">
+                        <Button variant="success" onClick={onRun}>
                             <FaPlay className="mr-1"/> Play
                         </Button>
                     </Col>
@@ -67,7 +75,7 @@ function App() {
 
                 <Row className="mt-4">
                     <Col>
-                        {usenn && graph && graph.nodes.length > 10 && (
+                        {graph && graph.nodes.length > 10 && (
                             <div className="border p-3">
                                 <NeuralNetwork graph={graph}/>
                             </div>

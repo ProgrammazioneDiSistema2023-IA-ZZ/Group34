@@ -16,6 +16,9 @@ app.get('/model/:ordinal', (req, res) => {
   res.json({graph: rust.select_model(parseInt(req.params.ordinal))});
 });
 
+app.get('/model/run', (req, res) => {
+  res.json({result: rust.run()});
+});
 app.get('/node/:nodeName', (req, res) => {
   res.json({graph: rust.get_node_js(req.params.nodeName)});
 });
@@ -33,6 +36,6 @@ app.delete('/node/:nodeName', (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log('Server is running on http://localhost:${port}');
+  console.log(`Server is running on http://localhost:${port}`);
 });
 
