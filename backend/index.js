@@ -20,6 +20,18 @@ app.get('/node/:nodeName', (req, res) => {
   res.json({graph: rust.get_node_js(req.params.nodeName)});
 });
 
+app.post('/node', (req, res) => {
+  res.json({graph: rust.create_node(req.body)});
+});
+
+app.put('/node', (req, res) => {
+  res.json({graph: rust.modify_node(req.params.body)});
+});
+
+app.delete('/node/:nodeName', (req, res) => {
+  res.json({graph: rust.delete_node(req.params.nodeName)});
+});
+
 app.listen(port, () => {
   console.log('Server is running on http://localhost:${port}');
 });

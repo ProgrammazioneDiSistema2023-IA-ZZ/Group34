@@ -126,7 +126,29 @@ mod js_binding {
 
     fn create_node(mut cx: FunctionContext) -> JsResult<JsString>{
         let node:NodeDto = serde_json::from_str(&cx.argument::<JsString>(0)?.value(&mut cx)).expect("Failed to serialize to JSON");
-        let graph = stateful_backend_environment::create_node(node).graph.unwrap();;
+        let graph = stateful_backend_environment::create_node(node).graph.unwrap();
+        // Convert GraphProto to JSON structure
+        let json_result: JsonResult = (&graph).into();
+
+        // Convert the JsonResult to JSON string
+        let json_string = serde_json::to_string(&json_result).expect("Failed to convert to JSON string");
+        Ok(cx.string::<String>(json_string))
+    }
+
+    fn modify_node(mut cx: FunctionContext) -> JsResult<JsString>{
+        let node:NodeDto = serde_json::from_str(&cx.argument::<JsString>(0)?.value(&mut cx)).expect("Failed to serialize to JSON");
+        let graph = stateful_backend_environment::modify_node(node).graph.unwrap();
+        // Convert GraphProto to JSON structure
+        let json_result: JsonResult = (&graph).into();
+
+        // Convert the JsonResult to JSON string
+        let json_string = serde_json::to_string(&json_result).expect("Failed to convert to JSON string");
+        Ok(cx.string::<String>(json_string))
+    }
+
+    fn delete_node(mut cx: FunctionContext) -> JsResult<JsString>{
+        let node_name = cx.argument::<JsString>(0)?.value(&mut cx);
+        let graph = stateful_backend_environment::remove_node(node_name).graph.unwrap();
         // Convert GraphProto to JSON structure
         let json_result: JsonResult = (&graph).into();
 
@@ -143,6 +165,8 @@ mod js_binding {
         cx.export_function("run", run)?;
         cx.export_function("get_node_js", get_node_js)?;
         cx.export_function("create_node", create_node)?;
+        cx.export_function("modify_node", modify_node)?;
+        cx.export_function("delete_node", delete_node)?;
         Ok(())
     }
 }
