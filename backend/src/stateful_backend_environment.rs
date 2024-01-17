@@ -12,7 +12,7 @@ use serde_json::{from_str, to_string};
 use std::{
     fs::{self, File, OpenOptions},
     io::{Read, Write},
-    path::Path,
+    path::Path, time::Instant,
 };
 #[allow(unused_imports)]
 use tract_onnx::tract_core::model::Node;
@@ -205,6 +205,13 @@ pub fn remove_node(node_name: String) -> ModelProto {
 
     OnnxModelEditor::remove_node(node_name, model)
 }
+#
+[derive(Serialize)]
+struct PredictionResult {
+    predicted: String,
+    expected: String,
+    time: f64,
+}
 
 #[allow(dead_code, unused_mut)]
 pub fn run(flag: bool,custom: bool,path: String ) -> String {
@@ -212,20 +219,26 @@ pub fn run(flag: bool,custom: bool,path: String ) -> String {
 
     let model = get_model();
     let mut input_tensor: TensorProto = decode_message(&state.default_input_path);
-    if custom==false {
-        //mantengo default
-    }else{
+    if custom {
         input_tensor = decode_message(&path);
     }
     let mut output_tensor: TensorProto = decode_message(&state.default_output_pat);
 
+    let start = Instant::now();
     let predicted_output = OnnxRunningEnvironment::new(model, input_tensor).run(flag);
+    let duration = start.elapsed();
 
-    return format!(
-        "Predicted classes: \n{}\n\n Expected output: \n{}",
-        results_to_string(predicted_output),
-        results_to_string(output_tensor)
-    );
+    // Create a PredictionResult struct
+    let result = PredictionResult {
+        predicted: results_to_string(predicted_output),
+        expected: results_to_string(output_tensor),
+        time: duration.as_secs_f64(),
+    };
+
+    // Serialize the struct to JSON
+    let json_result = serde_json::to_string(&result).expect("Failed to serialize to JSON");
+
+    return json_result;
 }
 
 fn convert_to_attribute_proto(attributes: Vec<(String, i32, String)>) -> Vec<AttributeProto> {
