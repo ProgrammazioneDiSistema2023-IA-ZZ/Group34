@@ -11,9 +11,9 @@ const RunModal = ({show, handleRun, handleClose}) => {
     const [loading, setLoading] = useState(false);
 
     const customImages = [
-        {id: 1, url: ape, label: 'Image 1'},
-        {id: 2, url: aquila, label: 'Image 2'},
-        {id: 3, url: gatto, label: 'Image 3'},
+        {id: 0, url: ape, label: 'Image 1'},
+        {id: 1, url: aquila, label: 'Image 2'},
+        {id: 2, url: gatto, label: 'Image 3'},
     ];
 
     return (

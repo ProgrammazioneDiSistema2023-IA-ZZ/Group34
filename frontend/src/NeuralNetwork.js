@@ -9,7 +9,6 @@ import {Button, Form, Modal, Spinner} from "react-bootstrap";
 import ModifyNodeModal from "./ModifyNodeModal";
 
 function NeuralNetwork({graph}) {
-    console.log(graph)
     const verticalSpacing = 10;
     const [selectedNode, setSelectedNode] = useState(null);
 
@@ -81,7 +80,6 @@ function NeuralNetwork({graph}) {
         fetch('http://localhost:3001/node/' + node.data.label)
             .then(response => response.json())
             .then((data) => {
-                console.log(JSON.parse(data.graph))
                 setIsModalVisible(true)
                 setSelectedNode(JSON.parse(data.graph));
             })
