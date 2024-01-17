@@ -25,9 +25,6 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes}) => {
         }
     }, [nodeData]);
 
-    console.log({modifiedNode})
-
-
     const handleInputChange = (attributeIndex, field, value) => {
         const updatedAttributes = [...modifiedNode.attributes];
         updatedAttributes[attributeIndex][field] = value;

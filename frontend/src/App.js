@@ -4,6 +4,8 @@ import NeuralNetwork from "./NeuralNetwork";
 import {Button, Col, Container, Row, Form, Spinner} from "react-bootstrap";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {FaFileDownload, FaPlay} from "react-icons/fa";
+import RunModal from "./RunModal";
+import RunResultModal from "./RunResultModal";
 
 //import './App.css';
 
@@ -11,7 +13,6 @@ function App() {
     const [message, setMessage] = useState('');
     const [selectedGraph, setSelectedGraph] = useState("");
     const [graph, setGraph] = useState({nodes: [], edges: []});
-    const [nodeList , setNodeList] = useState([]);
     const [loading, setLoading] = useState(false);
 
     function onLoad(){
@@ -26,17 +27,24 @@ function App() {
             })
             .catch(error => console.error('Error:', error));
     }
-    function onRun(){
+    function onRun(options, setLoading){
+        console.log({options})
         fetch('http://localhost:3001/runmodel')
             .then(response => response.json())
             .then((data) => {
                 console.log({data})
+                setShowRunModal(false)
+                setShowRunModalResults(true);
+                setRunResult(data.result);
             })
             .catch(error => console.error('Error:', error));
     }
 
 
-    let usenn = true; //change this flag to show the alternative layout
+    const [showRunModal, setShowRunModal] = useState(false);
+    const [showRunModalResults, setShowRunModalResults] = useState(false);
+    const [runResult, setRunResult] = useState("");
+    console.log(runResult)
 
 
     return (
@@ -70,8 +78,8 @@ function App() {
                         </Button>
                     </Col>
                     <Col className="text-center col-lg-1">
-                        <Button variant="success" onClick={onRun}>
-                            <FaPlay className="mr-1"/> Play
+                        <Button variant="success" onClick={()=>setShowRunModal(true)}>
+                            <FaPlay className="mr-1"/> Run
                         </Button>
                     </Col>
                 </Row>
@@ -92,6 +100,8 @@ function App() {
                         </div>
                     </Col>
                 </Row>
+                <RunModal show={showRunModal} handleClose={()=>{setShowRunModal(false)}} handleRun={onRun}/>
+                <RunResultModal show={showRunModalResults} handleClose={()=>setShowRunModalResults(false)} result={runResult}/>
 
             </Container>
         </div>
