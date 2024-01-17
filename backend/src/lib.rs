@@ -9,6 +9,7 @@ mod js_binding {
     use neon::prelude::*;
     #[allow(unused_imports)]
     use prost::Message;
+    use serde::Deserialize;
     #[allow(unused_imports)]
     use serde::Serialize;
     #[allow(unused_imports)]
@@ -113,9 +114,61 @@ mod js_binding {
 
     }
 
+    
+    #[derive(Debug, Deserialize)]
+    struct Options {
+        use_default: bool,
+        image: i32,
+        use_parallelization: bool,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct RequestBody {
+        options: Options,
+    }
+
     fn run(mut cx: FunctionContext) -> JsResult<JsString>{
-        let result = stateful_backend_environment::run();
-        Ok(cx.string(result))
+
+        
+        let json_string = cx.argument::<JsString>(0)?.value(&mut cx);
+    
+        // Deserializza l'oggetto JSON in una struct
+        let request_body: RequestBody = serde_json::from_str(&json_string).expect("Failed to convert to JSON string");
+        let use_default = request_body.options.use_default;
+        let image = request_body.options.image;
+        let use_parallelization = request_body.options.use_parallelization;
+        let mut path_img="";
+        if(use_default==true){
+            if(use_parallelization==true){
+                let result = stateful_backend_environment::run(true,false,"".to_string());
+                Ok(cx.string(result))
+            }else{
+                let result = stateful_backend_environment::run(false,false,"".to_string());
+                Ok(cx.string(result))
+            }
+        }else{
+            match image {
+                0 => {
+                    path_img="src/images/ape.jpg";
+                }
+                1 => {
+                    path_img="src/images/aquila.jpg";
+                }
+                2 => {
+                    path_img="src/images/gatto.jpg";
+                }
+                _ => {
+                    println!("Image is not 0, 1, or 2");
+                }
+            }
+            if(use_parallelization==true){
+                let result = stateful_backend_environment::run(true,true,path_img.to_string());
+                Ok(cx.string(result))
+            }else{
+                let result = stateful_backend_environment::run(false,true,path_img.to_string());
+                Ok(cx.string(result))
+            }
+        }
     }
 
     fn get_node_js(mut cx: FunctionContext) -> JsResult<JsString>{

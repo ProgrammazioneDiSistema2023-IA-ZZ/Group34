@@ -206,14 +206,19 @@ pub fn remove_node(node_name: String) -> ModelProto {
 }
 
 #[allow(dead_code)]
-pub fn run() -> String {
+pub fn run(flag: bool,custom: bool,path: String ) -> String {
     let mut state = ServerState::new();
 
     let model = get_model();
     let mut input_tensor: TensorProto = decode_message(&state.default_input_path);
+    if(custom==false){
+        //mantengo default
+    }else{
+        input_tensor = decode_message(&path);
+    }
     let mut output_tensor: TensorProto = decode_message(&state.default_output_pat);
 
-    let predicted_output = OnnxRunningEnvironment::new(model, input_tensor).run(true);
+    let predicted_output = OnnxRunningEnvironment::new(model, input_tensor).run(flag);
 
     return format!(
         "Predicted classes: \n{}\n\n Expected output: \n{}",
