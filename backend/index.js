@@ -9,6 +9,7 @@ console.log(rust.hello());
 console.log(rust.start());
 
 app.use(cors());
+app.use(express.json());
 
 
 app.get('/model/:ordinal', (req, res) => {
@@ -16,8 +17,9 @@ app.get('/model/:ordinal', (req, res) => {
   res.json({graph: rust.select_model(parseInt(req.params.ordinal))});
 });
 
-app.get('/runmodel', (req, res) => {
-  res.json({result: rust.run()});
+app.post('/runmodel', (req, res) => {
+  console.log(req.body)
+  res.json({result: rust.run(JSON.stringify(req.body))});
 });
 app.get('/node/:nodeName', (req, res) => {
   res.json({graph: rust.get_node_js(req.params.nodeName)});

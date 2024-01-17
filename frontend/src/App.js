@@ -29,18 +29,25 @@ function App() {
     }
 
     function onRun(options, setLoading) {
-        console.log({options})
-        fetch('http://localhost:3001/runmodel')
+        console.log({ options });
+        fetch('http://localhost:3001/runmodel', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({options}),
+        })
             .then(response => response.json())
             .then((data) => {
-                console.log({data})
-                setShowRunModal(false)
+                console.log({ data });
+                setShowRunModal(false);
                 setShowRunModalResults(true);
                 setRunResult(data.result);
-                setLoading(false)
+                setLoading(false);
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => console.error('Errore:', error));
     }
+
 
 
     const [showRunModal, setShowRunModal] = useState(false);
@@ -76,7 +83,7 @@ function App() {
                         </Form.Group>
                     </Col>
                     <Col className="text-center col-lg-1">
-                        <Button variant="secondary" onClick={() => setShowGraph((old) => !old)}>
+                        <Button variant="secondary" className="mr-2" onClick={() => setShowGraph((old) => !old)}>
                             {showGraph ?
                                 <><FaEye className="mr-1"/> Hide</>
                                 :
@@ -90,7 +97,7 @@ function App() {
                         </Button>
                     </Col>
                     <Col className="text-center col-lg-1">
-                        <Button variant="success" onClick={() => setShowRunModal(true)}>
+                        <Button variant="success" className="mr-2" onClick={() => setShowRunModal(true)}>
                             <FaPlay className="mr-1"/> Run
                         </Button>
                     </Col>

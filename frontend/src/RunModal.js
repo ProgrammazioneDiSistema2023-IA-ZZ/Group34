@@ -1,5 +1,8 @@
 import React, {useState} from 'react';
 import {Modal, Button, Form, Switch, Image, Spinner} from 'react-bootstrap';
+import ape from './images/ape.jpg';
+import aquila from './images/aquila.jpg';
+import gatto from './images/gatto.jpg';
 
 const RunModal = ({show, handleRun, handleClose}) => {
     const [useDefaultInput, setUseDefaultInput] = useState(true);
@@ -8,9 +11,9 @@ const RunModal = ({show, handleRun, handleClose}) => {
     const [loading, setLoading] = useState(false);
 
     const customImages = [
-        {id: 1, url: 'https://idp.polito.it/idp/images/logo_polito.jpg', label: 'Image 1'},
-        {id: 2, url: 'https://idp.polito.it/idp/images/logo_polito.jpg', label: 'Image 2'},
-        {id: 3, url: 'https://idp.polito.it/idp/images/logo_polito.jpg', label: 'Image 3'},
+        {id: 1, url: ape, label: 'Image 1'},
+        {id: 2, url: aquila, label: 'Image 2'},
+        {id: 3, url: gatto, label: 'Image 3'},
     ];
 
     return (
@@ -73,7 +76,7 @@ const RunModal = ({show, handleRun, handleClose}) => {
                 </Button>
                 <Button variant="primary" onClick={()=>{
                     setLoading(true);
-                    handleRun({useDefault: useDefaultInput, image: selectedImage, useParallelization: useParallelization}, setLoading);
+                    handleRun({use_default: useDefaultInput, image: parseInt(selectedImage) || 0, use_parallelization: useParallelization}, setLoading);
                 }}>
                     Run
                 </Button>

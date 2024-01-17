@@ -149,13 +149,13 @@ mod js_binding {
         }else{
             match image {
                 0 => {
-                    path_img="src/images/ape.jpg";
+                    path_img="./src/images/ape.jpg";
                 }
                 1 => {
-                    path_img="src/images/aquila.jpg";
+                    path_img="./src/images/aquila.jpg";
                 }
                 2 => {
-                    path_img="src/images/gatto.jpg";
+                    path_img="./src/images/gatto.jpg";
                 }
                 _ => {
                     println!("Image is not 0, 1, or 2");
