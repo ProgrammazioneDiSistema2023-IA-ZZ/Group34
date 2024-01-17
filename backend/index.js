@@ -13,12 +13,10 @@ app.use(express.json());
 
 
 app.get('/model/:ordinal', (req, res) => {
-  console.log(req.params.ordinal);
   res.json({graph: rust.select_model(parseInt(req.params.ordinal))});
 });
 
 app.post('/runmodel', (req, res) => {
-  console.log(req.body)
   res.json({result: rust.run(JSON.stringify(req.body))});
 });
 app.get('/node/:nodeName', (req, res) => {
