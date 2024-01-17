@@ -4,7 +4,11 @@ use crate::{
     onnx_running_environment::OnnxModelEditor,
     utils::{decode_message, get_path_from_ordinal, write_message, OnnxError},
 };
-use crate::{onnx_running_environment::OnnxRunningEnvironment, utils::{results_to_string, convert_img}, operations::utils::ndarray_to_tensor_proto};
+use crate::{
+    onnx_running_environment::OnnxRunningEnvironment,
+    operations::utils::ndarray_to_tensor_proto,
+    utils::{convert_img, results_to_string},
+};
 #[allow(unused_imports)]
 use protobuf::Error;
 use serde::{Deserialize, Serialize};
@@ -12,7 +16,8 @@ use serde_json::{from_str, to_string};
 use std::{
     fs::{self, File, OpenOptions},
     io::{Read, Write},
-    path::Path, time::Instant,
+    path::Path,
+    time::Instant,
 };
 #[allow(unused_imports)]
 use tract_onnx::tract_core::model::Node;
@@ -54,9 +59,10 @@ impl ServerState {
         let mut file = OpenOptions::new()
             .create(true)
             .write(true)
+            .truncate(true)
             .open(STATEFUL_PATHS.state)?;
-
         file.write_all(json_data.as_bytes())?;
+        file.flush()?;
         Ok(())
     }
 
@@ -145,8 +151,6 @@ pub fn get_node(node_name: String) -> NodeDto {
     }
 }
 
-
-
 #[allow(dead_code)]
 pub fn create_node(node_dto: NodeDto) -> ModelProto {
     let model = get_model();
@@ -205,8 +209,8 @@ pub fn remove_node(node_name: String) -> ModelProto {
 
     OnnxModelEditor::remove_node(node_name, model)
 }
-#
-[derive(Serialize)]
+
+#[derive(Serialize)]
 struct PredictionResult {
     predicted: String,
     expected: String,
@@ -214,7 +218,7 @@ struct PredictionResult {
 }
 
 #[allow(dead_code, unused_mut)]
-pub fn run(flag: bool,custom: bool,path: String ) -> String {
+pub fn run(flag: bool, custom: bool, path: String) -> String {
     let mut state = ServerState::new();
 
     let model = get_model();
@@ -275,13 +279,13 @@ fn convert_to_vec(attributes_proto: Vec<AttributeProto>) -> Vec<(String, i32, St
     for attr in attributes_proto {
         let mut t = (attr.name, attr.r#type, "".to_string());
         match attr.r#type {
-            x if x == attribute_proto::AttributeType::Float as i32  => {
+            x if x == attribute_proto::AttributeType::Float as i32 => {
                 t.2 = attr.f.to_string();
             }
-            x if x == attribute_proto::AttributeType::Int as i32  => {
+            x if x == attribute_proto::AttributeType::Int as i32 => {
                 t.2 = attr.i.to_string();
             }
-            x if x == attribute_proto::AttributeType::String as i32  => {
+            x if x == attribute_proto::AttributeType::String as i32 => {
                 t.2 = String::from_utf8(attr.s).unwrap();
             }
             _ => {}
