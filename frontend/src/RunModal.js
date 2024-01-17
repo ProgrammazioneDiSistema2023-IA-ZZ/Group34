@@ -73,7 +73,7 @@ const RunModal = ({show, handleRun, handleClose}) => {
                 </Button>
                 <Button variant="primary" onClick={()=>{
                     setLoading(true);
-                    handleRun();
+                    handleRun({useDefault: useDefaultInput, image: selectedImage, useParallelization: useParallelization}, setLoading);
                 }}>
                     Run
                 </Button>

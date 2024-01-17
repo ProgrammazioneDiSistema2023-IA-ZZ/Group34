@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 
 const RunResultsModal = ({ show, onHide, result }) => {
+    console.log({show})
     return (
         <Modal show={show} onHide={onHide}>
             <Modal.Header closeButton>

@@ -3,7 +3,7 @@ import FixedGraph from "./Graph";
 import NeuralNetwork from "./NeuralNetwork";
 import {Button, Col, Container, Row, Form, Spinner} from "react-bootstrap";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import {FaFileDownload, FaPlay} from "react-icons/fa";
+import {FaEye, FaEyeSlash, FaFileDownload, FaPlay} from "react-icons/fa";
 import RunModal from "./RunModal";
 import RunResultModal from "./RunResultModal";
 
@@ -15,7 +15,7 @@ function App() {
     const [graph, setGraph] = useState({nodes: [], edges: []});
     const [loading, setLoading] = useState(false);
 
-    function onLoad(){
+    function onLoad() {
         setLoading(true);
         fetch('http://localhost:3001/model/' + selectedGraph)
             .then(response => response.json())
@@ -27,7 +27,8 @@ function App() {
             })
             .catch(error => console.error('Error:', error));
     }
-    function onRun(options, setLoading){
+
+    function onRun(options, setLoading) {
         console.log({options})
         fetch('http://localhost:3001/runmodel')
             .then(response => response.json())
@@ -36,6 +37,7 @@ function App() {
                 setShowRunModal(false)
                 setShowRunModalResults(true);
                 setRunResult(data.result);
+                setLoading(false)
             })
             .catch(error => console.error('Error:', error));
     }
@@ -44,6 +46,7 @@ function App() {
     const [showRunModal, setShowRunModal] = useState(false);
     const [showRunModalResults, setShowRunModalResults] = useState(false);
     const [runResult, setRunResult] = useState("");
+    const [showGraph, setShowGraph] = useState(false);
     console.log(runResult)
 
 
@@ -58,7 +61,7 @@ function App() {
                 </Row>
 
                 <Row className="mb-4">
-                    <Col className="text-center col-lg-10">
+                    <Col className="text-center col-lg-9">
                         <Form.Group controlId="selectGraph">
                             <Form.Label>Select Graph:</Form.Label>
                             <Form.Control as="select" onChange={(e) => setSelectedGraph(e.target.value)}
@@ -73,12 +76,21 @@ function App() {
                         </Form.Group>
                     </Col>
                     <Col className="text-center col-lg-1">
+                        <Button variant="secondary" onClick={() => setShowGraph((old) => !old)}>
+                            {showGraph ?
+                                <><FaEye className="mr-1"/> Hide</>
+                                :
+                                <><FaEyeSlash className="mr-1"/> Show</>
+                            }
+                        </Button>
+                    </Col>
+                    <Col className="text-center col-lg-1">
                         <Button variant="primary" className="mr-2" onClick={onLoad}>
                             <FaFileDownload className="mr-1"/> Load
                         </Button>
                     </Col>
                     <Col className="text-center col-lg-1">
-                        <Button variant="success" onClick={()=>setShowRunModal(true)}>
+                        <Button variant="success" onClick={() => setShowRunModal(true)}>
                             <FaPlay className="mr-1"/> Run
                         </Button>
                     </Col>
@@ -93,15 +105,18 @@ function App() {
 
 
                 }
-                <Row className="mt-4">
+                {showGraph && <Row className="mt-4">
                     <Col>
                         <div className="border p-3">
                             <NeuralNetwork graph={graph} setLoading={setLoading}/>
                         </div>
                     </Col>
-                </Row>
-                <RunModal show={showRunModal} handleClose={()=>{setShowRunModal(false)}} handleRun={onRun}/>
-                <RunResultModal show={showRunModalResults} handleClose={()=>setShowRunModalResults(false)} result={runResult}/>
+                </Row>}
+                <RunModal show={showRunModal} handleClose={() => {
+                    setShowRunModal(false)
+                }} handleRun={onRun}/>
+                <RunResultModal show={showRunModalResults} onHide={() => setShowRunModalResults(false)}
+                                result={runResult}/>
 
             </Container>
         </div>
