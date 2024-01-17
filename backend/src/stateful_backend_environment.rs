@@ -4,7 +4,7 @@ use crate::{
     onnx_running_environment::OnnxModelEditor,
     utils::{decode_message, get_path_from_ordinal, write_message, OnnxError},
 };
-use crate::{onnx_running_environment::OnnxRunningEnvironment, utils::results_to_string};
+use crate::{onnx_running_environment::OnnxRunningEnvironment, utils::{results_to_string, convert_img}, operations::utils::ndarray_to_tensor_proto};
 #[allow(unused_imports)]
 use protobuf::Error;
 use serde::{Deserialize, Serialize};
@@ -220,7 +220,8 @@ pub fn run(flag: bool,custom: bool,path: String ) -> String {
     let model = get_model();
     let mut input_tensor: TensorProto = decode_message(&state.default_input_path);
     if custom {
-        input_tensor = decode_message(&path);
+        let arr_d_img = convert_img(path.to_string());
+        input_tensor = ndarray_to_tensor_proto::<f32>(arr_d_img, "data").unwrap();
     }
     let mut output_tensor: TensorProto = decode_message(&state.default_output_pat);
 
