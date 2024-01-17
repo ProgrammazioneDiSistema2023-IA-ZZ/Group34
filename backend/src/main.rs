@@ -9,12 +9,15 @@ use crate::operations::utils::ndarray_to_tensor_proto;
 
 use crate::utils::convert_img;
 use crate::utils::decode_message;
+#[allow(unused_imports)]
 use crate::utils::CLASSES_NAMES;
 use crate::utils::get_path_from_ordinal;
 use crate::utils::results_to_string;
+#[allow(unused_imports)]
 use operations::utils::tensor_proto_to_ndarray;
 #[allow(unused_imports)]
 use std::io::{self, Read, Write};
+#[allow(unused_imports)]
 use tract_onnx::tract_core::tract_data::itertools::Itertools;
 
 mod onnx_running_environment;

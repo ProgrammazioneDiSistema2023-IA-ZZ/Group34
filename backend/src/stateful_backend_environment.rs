@@ -14,6 +14,7 @@ use std::{
     io::{Read, Write},
     path::Path,
 };
+#[allow(unused_imports)]
 use tract_onnx::tract_core::model::Node;
 
 struct StatefulPaths {
@@ -205,13 +206,13 @@ pub fn remove_node(node_name: String) -> ModelProto {
     OnnxModelEditor::remove_node(node_name, model)
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, unused_mut)]
 pub fn run(flag: bool,custom: bool,path: String ) -> String {
     let mut state = ServerState::new();
 
     let model = get_model();
     let mut input_tensor: TensorProto = decode_message(&state.default_input_path);
-    if(custom==false){
+    if custom==false {
         //mantengo default
     }else{
         input_tensor = decode_message(&path);

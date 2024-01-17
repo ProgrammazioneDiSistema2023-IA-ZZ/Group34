@@ -138,8 +138,8 @@ mod js_binding {
         let image = request_body.options.image;
         let use_parallelization = request_body.options.use_parallelization;
         let mut path_img="";
-        if(use_default==true){
-            if(use_parallelization==true){
+        if use_default==true {
+            if use_parallelization==true {
                 let result = stateful_backend_environment::run(true,false,"".to_string());
                 Ok(cx.string(result))
             }else{
@@ -161,7 +161,7 @@ mod js_binding {
                     println!("Image is not 0, 1, or 2");
                 }
             }
-            if(use_parallelization==true){
+            if use_parallelization==true {
                 let result = stateful_backend_environment::run(true,true,path_img.to_string());
                 Ok(cx.string(result))
             }else{
