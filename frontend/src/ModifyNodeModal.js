@@ -3,7 +3,7 @@ import {Modal, Button, Form, Col, Row, Card, ListGroup} from 'react-bootstrap';
 import SelectInputOutput from "./SelectInputOutput";
 import professors from "dagre/lib/lodash";
 
-const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes}) => {
+const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) => {
     const getEmptyNode = () => {
         return {
             node_name: '',
@@ -33,8 +33,10 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes}) => {
     };
 
     const handleAddInput = (selectedInput) => {
-        const updatedInputs = [...modifiedNode.input, selectedInput];
-        setModifiedNode({...modifiedNode, input: updatedInputs});
+        if(selectedInput){
+            const updatedInputs = [...modifiedNode.input, selectedInput];
+            setModifiedNode({...modifiedNode, input: updatedInputs});
+        }
     };
 
     const handleRemoveInput = (index) => {
@@ -67,7 +69,11 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes}) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} size="lg">
+        <Modal show={show} onHide={()=>{
+            onHide();
+            console.log("ciao")
+            setModifiedNode(getEmptyNode());
+        }} size="lg">
             <Modal.Header closeButton>
                 <Modal.Title>
                     {nodeData ? `Edit Node: ${nodeData.node_name}` : 'Create New Node'}
@@ -137,7 +143,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes}) => {
                     <Form.Label className="h3 mt-3">Inputs</Form.Label>
                     <Card className={"mb-3"}>
                         <Card.Body>
-                            <SelectInputOutput isInput={true} onAddNode={handleAddInput} nodes={nodes}/>
+                            <SelectInputOutput isInput={true} onAddNode={handleAddInput} nodes={nodes} initializers={initializers}/>
                             <br/>
                             <ListGroup className={"mt-3"}>
                                 {modifiedNode.input.map((input, index) => (<ListGroup.Item key={index}>
@@ -182,18 +188,36 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes}) => {
                                                 onChange={(e) => handleInputChange(index, 1, e.target.value)}
                                             >
                                                 <option value="">-- Select --</option>
-                                                <option value="1">Int</option>
-                                                <option value="2">Float</option>
+                                                <option value="0">Undefined</option>
+                                                <option value="1">Float</option>
+                                                <option value="2">Int</option>
                                                 <option value="3">String</option>
+                                                <option value="4">Tensor</option>
+                                                <option value="5">Graph</option>
+                                                <option value="11">SparseTensor</option>
+                                                <option value="13">TypeProto</option>
+                                                <option value="6">Floats</option>
+                                                <option value="7">Ints</option>
+                                                <option value="8">Strings</option>
+                                                <option value="9">Tensors</option>
+                                                <option value="10">Graphs</option>
+                                                <option value="12">SparseTensors</option>
+                                                <option value="14">TypeProtos</option>
+
                                             </Form.Control>
                                         </Col>
                                         <Col>
-                                            <Form.Control
+                                            {(attribute[1]===1 || attribute[1]===2 || attribute[1]===2) ? <Form.Control
                                                 type="text"
                                                 placeholder="Attribute Value"
                                                 value={attribute[2]}
                                                 onChange={(e) => handleInputChange(index, 2, e.target.value)}
                                             />
+                                            :
+                                            <>
+                                                Not supported type
+                                            </>
+                                            }
                                         </Col>
                                         <Col>
                                             <Button variant="danger" onClick={() => handleDeleteAttribute(index)}>

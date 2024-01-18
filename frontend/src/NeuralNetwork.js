@@ -59,6 +59,7 @@ function NeuralNetwork({graph}) {
             }));
         }
     }, [graph]);
+    console.log(graph)
 
     const onConnect = useCallback(
         (params) =>
@@ -205,7 +206,7 @@ function NeuralNetwork({graph}) {
 
             </div>
 
-            <ModifyNodeModal show={isModalVisible} onHide={handleCancel} nodeData={selectedNode} nodes={graph.nodes}/>
+            <ModifyNodeModal show={isModalVisible} onHide={handleCancel} nodeData={selectedNode} nodes={graph.nodes} initializers={graph.initializers}/>
         </>
     );
 }

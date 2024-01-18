@@ -47,6 +47,7 @@ mod js_binding {
     struct JsonResult {
         nodes: Vec<JsonNode>,
         edges: Vec<JsonEdge>,
+        initializers: Vec<String>,
     }
 
     impl From<&GraphProto> for JsonResult {
@@ -55,6 +56,7 @@ mod js_binding {
             let mut node_id_map = std::collections::HashMap::new();
             let mut nodes = Vec::new();
             let mut edges = Vec::new();
+            let mut initializers = Vec::new();
 
             // Convert nodes
             for node_proto in &graph_proto.node {
@@ -63,6 +65,11 @@ mod js_binding {
                 node_id_map.insert(node_proto.name.clone(), id);
                 node_id_counter += 1;
                 nodes.push(JsonNode { id, label });
+            }
+
+            // Convert initializers
+            for tensor_proto in &graph_proto.initializer {
+                initializers.push(tensor_proto.name.clone());
             }
 
             // Convert edges
@@ -76,7 +83,7 @@ mod js_binding {
                 }
             }
 
-            JsonResult { nodes, edges }
+            JsonResult { nodes, edges, initializers }
         }
     }
 

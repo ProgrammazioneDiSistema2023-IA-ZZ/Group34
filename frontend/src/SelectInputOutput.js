@@ -1,9 +1,11 @@
 import React, {useState, useContext} from 'react';
 import {Form, Button, Accordion, Card, Row, Alert} from 'react-bootstrap';
+
 const SelectInputOutput = ({
                                isInput,
                                onAddNode,
                                nodes,
+                               initializers
                            }) => {
     const [node, setNode] = useState('');
 
@@ -23,6 +25,7 @@ const SelectInputOutput = ({
                         >
                             <option value="">Select the {isInput ? "input" : "output"} node</option>
                             {nodes.map((node) => (<option value={node.label}>{node.label}</option>))}
+                            {initializers.map((init) => (<option value={init}>{init}</option>))}
                         </Form.Control>
                     </Form.Group>
                     <Button className="mt-3" variant="primary" onClick={addNode}>

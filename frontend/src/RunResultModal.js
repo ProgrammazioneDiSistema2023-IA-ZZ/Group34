@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button } from 'react-bootstrap';
+import {Modal, Button, Row} from 'react-bootstrap';
 
 const RunResultsModal = ({ show, onHide, result }) => {
     return (
@@ -8,7 +8,26 @@ const RunResultsModal = ({ show, onHide, result }) => {
                 <Modal.Title>Run Results</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <p>{result}</p>
+                {result && <>
+                    <Row>
+                        <h4>Expected:</h4>
+                    </Row>
+                    <Row>
+                        {result.expected.map((ex) => <>
+                            <h6>{ex}</h6>
+                        </>)}
+                    </Row>
+                    <Row>
+                        <h4>Actual:</h4>
+                    </Row>
+                    <Row>
+                        {result.predicted.map((pr) => <>
+                            <h6>{pr}</h6>
+                        </>)}</Row>
+                    <Row>
+                        <h4>Execution time: {parseFloat(result.time).toFixed(3)} seconds</h4>
+                    </Row>
+                </>}
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={onHide}>

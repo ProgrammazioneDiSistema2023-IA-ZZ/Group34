@@ -42,7 +42,10 @@ function App() {
                 console.log({ data });
                 setShowRunModal(false);
                 setShowRunModalResults(true);
-                setRunResult(data.result);
+                let results = JSON.parse(data.result);
+                results.expected = results.expected.split("|").filter((el) => el !== " " && el !== "");
+                results.predicted = results.predicted.split("|").filter((el) => el !== " " && el !== "");
+                setRunResult(results);
                 setLoading(false);
             })
             .catch(error => console.error('Errore:', error));
@@ -54,8 +57,6 @@ function App() {
     const [showRunModalResults, setShowRunModalResults] = useState(false);
     const [runResult, setRunResult] = useState("");
     const [showGraph, setShowGraph] = useState(false);
-    console.log(runResult)
-
 
     return (
         <div className="App">
