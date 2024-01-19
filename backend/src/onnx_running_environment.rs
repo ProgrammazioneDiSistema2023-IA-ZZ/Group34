@@ -296,7 +296,6 @@ impl OnnxModelEditor {
             }
         }
         // nella mappa ho i nodi corretti da inserire
-        println!("{:?}", node_map);
         // devo ricreare il modello
         let graph = GraphProto {
             node: node_map.into_iter().collect(),

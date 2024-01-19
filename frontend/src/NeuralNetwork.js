@@ -8,7 +8,7 @@ import ReactFlow, {
 import {Button, Form, Modal, Spinner} from "react-bootstrap";
 import ModifyNodeModal from "./ModifyNodeModal";
 
-function NeuralNetwork({graph}) {
+function NeuralNetwork({graph, setGraph}) {
     const verticalSpacing = 10;
     const [selectedNode, setSelectedNode] = useState(null);
 
@@ -36,9 +36,10 @@ function NeuralNetwork({graph}) {
     const [Snodes, setSNodes, onSNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isModify, setIsModify] = useState(false);
 
     useEffect(() => {
-        if(graph){
+        if (graph) {
             setNodes(graph.nodes.map((node) => {
                 return {
                     data: {
@@ -76,10 +77,11 @@ function NeuralNetwork({graph}) {
         [setEdges]
     );
 
-    function onNodeClick(event, node){
+    function onNodeClick(event, node) {
         fetch('http://localhost:3001/node/' + node.data.label)
             .then(response => response.json())
             .then((data) => {
+                setIsModify(true)
                 setIsModalVisible(true)
                 setSelectedNode(JSON.parse(data.graph));
             })
@@ -147,6 +149,45 @@ function NeuralNetwork({graph}) {
         updateParallelNodesPosition();
     }, [nodes, edges, setNodes]);
 
+    const onSave = (node) => {
+        console.log({node})
+        if (!isModify) {
+            fetch('http://localhost:3001/node', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(node),
+            })
+                .then(response => response.json())
+                .then((data) => {
+                    console.log(JSON.parse(data.graph))
+                    setGraph(() => JSON.parse(data.graph))
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+
+        } else {
+            fetch('http://localhost:3001/node', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(node),
+            })
+                .then(response => response.json())
+                .then((data) => {
+                    console.log(JSON.parse(data.graph))
+                    setGraph(() => JSON.parse(data.graph))
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+
+        }
+    }
+
     const getNodeId = () => Math.random();
 
     const onInit = () => {
@@ -154,16 +195,12 @@ function NeuralNetwork({graph}) {
     };
 
     const displayCustomNamedNodeModal = () => {
+        setIsModify(false);
         setIsModalVisible(true);
     };
 
     const handleCancel = () => {
         setSelectedNode(null)
-        setIsModalVisible(false);
-    };
-
-    const handleOk = (data) => {
-        onAdd(data.nodeName);
         setIsModalVisible(false);
     };
 
@@ -178,6 +215,18 @@ function NeuralNetwork({graph}) {
         };
         setNodes((nds) => nds.concat(newNode));
     };
+    const onDelete = (node_name) => {
+        fetch('http://localhost:3001/node/' + node_name, {
+            method: 'DELETE',
+        })
+            .then(response => response.json())
+            .then((data) => {
+                setGraph(() => JSON.parse(data.graph))
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
 
     return (
         <>
@@ -205,7 +254,8 @@ function NeuralNetwork({graph}) {
 
             </div>
 
-            <ModifyNodeModal show={isModalVisible} onHide={handleCancel} nodeData={selectedNode} nodes={graph.nodes} initializers={graph.initializers}/>
+            <ModifyNodeModal show={isModalVisible} onHide={handleCancel} nodeData={selectedNode} nodes={graph.nodes}
+                             initializers={graph.initializers} onSave={onSave} isModify={isModify} onDelete={onDelete}/>
         </>
     );
 }

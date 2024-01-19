@@ -116,7 +116,7 @@ function App() {
                 {showGraph && <Row className="mt-4">
                     <Col>
                         <div className="border p-3">
-                            <NeuralNetwork graph={graph} setLoading={setLoading}/>
+                            <NeuralNetwork graph={graph} setGraph={setGraph} setLoading={setLoading}/>
                         </div>
                     </Col>
                 </Row>}

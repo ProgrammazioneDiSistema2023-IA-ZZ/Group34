@@ -24,11 +24,11 @@ app.get('/node/:nodeName', (req, res) => {
 });
 
 app.post('/node', (req, res) => {
-  res.json({graph: rust.create_node(req.body)});
+  res.json({graph: rust.create_node(JSON.stringify(req.body))});
 });
 
 app.put('/node', (req, res) => {
-  res.json({graph: rust.modify_node(req.params.body)});
+  res.json({graph: rust.modify_node(JSON.stringify(req.body))});
 });
 
 app.delete('/node/:nodeName', (req, res) => {

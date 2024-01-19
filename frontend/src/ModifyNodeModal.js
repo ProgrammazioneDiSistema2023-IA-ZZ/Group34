@@ -3,7 +3,7 @@ import {Modal, Button, Form, Col, Row, Card, ListGroup} from 'react-bootstrap';
 import SelectInputOutput from "./SelectInputOutput";
 import professors from "dagre/lib/lodash";
 
-const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) => {
+const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers, isModify, onDelete}) => {
     const getEmptyNode = () => {
         return {
             node_name: '',
@@ -33,7 +33,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
     };
 
     const handleAddInput = (selectedInput) => {
-        if(selectedInput){
+        if (selectedInput) {
             const updatedInputs = [...modifiedNode.input, selectedInput];
             setModifiedNode({...modifiedNode, input: updatedInputs});
         }
@@ -47,6 +47,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
 
     const handleSave = () => {
         onSave(modifiedNode);
+        onHide()
         setModifiedNode(getEmptyNode());
     };
 
@@ -69,9 +70,8 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
     };
 
     return (
-        <Modal show={show} onHide={()=>{
+        <Modal show={show} onHide={() => {
             onHide();
-            console.log("ciao")
             setModifiedNode(getEmptyNode());
         }} size="lg">
             <Modal.Header closeButton>
@@ -143,7 +143,8 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
                     <Form.Label className="h3 mt-3">Inputs</Form.Label>
                     <Card className={"mb-3"}>
                         <Card.Body>
-                            <SelectInputOutput isInput={true} onAddNode={handleAddInput} nodes={nodes} initializers={initializers}/>
+                            <SelectInputOutput isInput={true} onAddNode={handleAddInput} nodes={nodes}
+                                               initializers={initializers}/>
                             <br/>
                             <ListGroup className={"mt-3"}>
                                 {modifiedNode.input.map((input, index) => (<ListGroup.Item key={index}>
@@ -164,7 +165,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
                         <Form.Label className={"h3 mt-3"}>Attributes</Form.Label>
                         <ListGroup>
                             {modifiedNode &&
-                                modifiedNode.attributes.length ? <Row>
+                            modifiedNode.attributes.length ? <Row>
                                 <Col>Name</Col>
                                 <Col>Type</Col>
                                 <Col>Value</Col>
@@ -207,16 +208,17 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
                                             </Form.Control>
                                         </Col>
                                         <Col>
-                                            {(attribute[1]===1 || attribute[1]===2 || attribute[1]===2 || attribute[1]===7) ? <Form.Control
-                                                type="text"
-                                                placeholder="Attribute Value"
-                                                value={attribute[2]}
-                                                onChange={(e) => handleInputChange(index, 2, e.target.value)}
-                                            />
-                                            :
-                                            <>
-                                                Not supported type
-                                            </>
+                                            {(attribute[1] === 1 || attribute[1] === 2 || attribute[1] === 2 || attribute[1] === 7) ?
+                                                <Form.Control
+                                                    type="text"
+                                                    placeholder="Attribute Value"
+                                                    value={attribute[2]}
+                                                    onChange={(e) => handleInputChange(index, 2, e.target.value)}
+                                                />
+                                                :
+                                                <>
+                                                    Not supported type
+                                                </>
                                             }
                                         </Col>
                                         <Col>
@@ -235,6 +237,13 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
                 </Form>
             </Modal.Body>
             <Modal.Footer>
+                {isModify && <Button variant="danger" onClick={() => {
+                    onHide();
+                    setModifiedNode(getEmptyNode());
+                    onDelete(nodeData.node_name);
+                }}>
+                    Delete
+                </Button>}
                 <Button variant="secondary" onClick={onHide}>
                     Close
                 </Button>
@@ -242,6 +251,8 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
                     Save Changes
                 </Button>
             </Modal.Footer>
+
+
         </Modal>
     );
 };
