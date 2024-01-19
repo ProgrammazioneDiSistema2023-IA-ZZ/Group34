@@ -266,6 +266,15 @@ fn convert_to_attribute_proto(attributes: Vec<(String, i32, String)>) -> Vec<Att
             x if x == attribute_proto::AttributeType::String as i32 => {
                 attrbute_proto.s = attribute_value.into_bytes()
             }
+            x if x == attribute_proto::AttributeType::Floats as i32 => {
+                attrbute_proto.floats = attribute_value.rsplit(";").map(|x| x.parse().unwrap()).collect()
+            }
+            x if x == attribute_proto::AttributeType::Ints as i32 => {
+                attrbute_proto.ints = attribute_value.rsplit(";").map(|x| x.parse().unwrap()).collect()
+            }
+            x if x == attribute_proto::AttributeType::Strings as i32 => {
+                attrbute_proto.strings = attribute_value.rsplit(";").map(|x| x.to_string().into_bytes()).collect()
+            }
             _ => {}
         }
 
@@ -287,6 +296,15 @@ fn convert_to_vec(attributes_proto: Vec<AttributeProto>) -> Vec<(String, i32, St
             }
             x if x == attribute_proto::AttributeType::String as i32 => {
                 t.2 = String::from_utf8(attr.s).unwrap();
+            }
+            x if x == attribute_proto::AttributeType::Floats as i32 => {
+                t.2 = attr.floats.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(";");
+            }
+            x if x == attribute_proto::AttributeType::Ints as i32 => {
+                t.2 = attr.ints.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(";");
+            }
+            x if x == attribute_proto::AttributeType::Strings as i32 => {
+                t.2 = attr.strings.iter().map(|x| String::from_utf8(x.clone()).unwrap()).collect::<Vec<String>>().join(";");
             }
             _ => {}
         };
