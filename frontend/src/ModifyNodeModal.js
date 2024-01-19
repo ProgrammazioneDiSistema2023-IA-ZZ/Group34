@@ -207,7 +207,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers}) 
                                             </Form.Control>
                                         </Col>
                                         <Col>
-                                            {(attribute[1]===1 || attribute[1]===2 || attribute[1]===2) ? <Form.Control
+                                            {(attribute[1]===1 || attribute[1]===2 || attribute[1]===2 || attribute[1]===7) ? <Form.Control
                                                 type="text"
                                                 placeholder="Attribute Value"
                                                 value={attribute[2]}
