@@ -59,7 +59,6 @@ function NeuralNetwork({graph}) {
             }));
         }
     }, [graph]);
-    console.log(graph)
 
     const onConnect = useCallback(
         (params) =>
