@@ -150,21 +150,6 @@ function NeuralNetwork({graph, setGraph}) {
     }, [nodes, edges, setNodes]);
 
     const onSave = (node) => {
-        node.attributes = node.attributes.map((attr) => {
-            switch (attr.type) {
-                case "2":
-                    attr.value = parseInt(attr.value);
-                    break;
-                case "1":
-                    attr.value = parseFloat(attr.value);
-                    break;
-            }
-            return {
-                name: attr.name,
-                type: attr.type,
-                value: attr.value
-            }
-        });
         console.log({node})
         if (!isModify) {
             fetch('http://localhost:3001/node', {
