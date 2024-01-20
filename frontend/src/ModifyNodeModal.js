@@ -88,7 +88,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers, i
                             placeholder="Enter Node Name"
                             value={modifiedNode.node_name}
                             onChange={(e) =>
-                                setModifiedNode({...modifiedNode, node_name: e.target.value})
+                                setModifiedNode({...modifiedNode, node_name: e.target.value, output: [e.target.value]})
                             }
                         />
                     </Form.Group>

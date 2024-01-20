@@ -8,7 +8,7 @@ const RunResultsModal = ({ show, onHide, result }) => {
                 <Modal.Title>Run Results</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                {result && <>
+                {result && (!result.error ? <>
                     <Row>
                         <h4>Expected:</h4>
                     </Row>
@@ -27,7 +27,12 @@ const RunResultsModal = ({ show, onHide, result }) => {
                     <Row>
                         <h4>Execution time: {parseFloat(result.time).toFixed(3)} seconds</h4>
                     </Row>
-                </>}
+                </>:
+                <>
+                    <h4>Error</h4>
+                    <h6>Error running the network</h6>
+                </>
+                )}
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={onHide}>

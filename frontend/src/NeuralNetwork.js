@@ -162,6 +162,7 @@ function NeuralNetwork({graph, setGraph}) {
                 .then(response => response.json())
                 .then((data) => {
                     console.log(JSON.parse(data.graph))
+                    handleCancel();
                     setGraph(() => JSON.parse(data.graph))
                 })
                 .catch((error) => {
@@ -179,6 +180,7 @@ function NeuralNetwork({graph, setGraph}) {
                 .then(response => response.json())
                 .then((data) => {
                     console.log(JSON.parse(data.graph))
+                    handleCancel();
                     setGraph(() => JSON.parse(data.graph))
                 })
                 .catch((error) => {
@@ -233,7 +235,7 @@ function NeuralNetwork({graph, setGraph}) {
             <div style={{height: '80vh', margin: '10px'}}>
 
                 <Button variant="primary" onClick={displayCustomNamedNodeModal}>
-                    Add Custom Name Node
+                    Add a node
                 </Button>
 
 

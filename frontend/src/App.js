@@ -45,10 +45,15 @@ function App() {
                 let results = JSON.parse(data.result);
                 results.expected = results.expected.split("|").filter((el) => el !== " " && el !== "");
                 results.predicted = results.predicted.split("|").filter((el) => el !== " " && el !== "");
+                results.error = false;
                 setRunResult(results);
                 setLoading(false);
             })
-            .catch(error => console.error('Errore:', error));
+            .catch(error => {
+                console.error('Errore:', error);
+                setLoading(false);
+                setRunResult({expected: [], predicted: [], time: 0, error: true});
+            });
     }
 
 
