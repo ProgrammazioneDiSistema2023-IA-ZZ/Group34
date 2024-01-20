@@ -38,6 +38,7 @@ pub struct OnnxRunningEnvironment {
 #[allow(unused)]
 impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
+        let mut index=0;
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
         let graph = model.clone().graph.unwrap();
         let mut input_tensor_clone = input_tensor.clone();
@@ -61,7 +62,8 @@ impl OnnxRunningEnvironment {
             optional_receiver = Some(receiver);
             let mut current_node_clone = current_node.clone();
             if current_node.name == "" {
-                current_node_clone.name = "name_node".to_string();
+                current_node_clone.name = "name_node_".to_string()+&index.to_string();
+                index=index+1;
             }
             //per ogni valore NodeProto creo un elemento del vettore node_io_vec
             let new_node_io = NodeIO {
