@@ -235,7 +235,7 @@ function NeuralNetwork({graph, setGraph}) {
             <div style={{height: '80vh', margin: '10px'}}>
 
                 <Button variant="primary" onClick={displayCustomNamedNodeModal}>
-                    Add Custom Name Node
+                    Add a node
                 </Button>
 
 
