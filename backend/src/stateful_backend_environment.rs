@@ -89,8 +89,6 @@ pub struct NodeDto {
     domain: String,
     attributes: Vec<(String, i32, String)>, //attribute_name, attribute_type, attribute_value
     doc_string: String,
-    name_node_before: String,
-    name_node_after: String,
 }
 
 #[allow(dead_code)]
@@ -146,14 +144,12 @@ pub fn get_node(node_name: String) -> NodeDto {
         domain: node_proto.domain,
         attributes: convert_to_vec(node_proto.attribute),
         doc_string: node_proto.doc_string,
-        name_node_before: "".to_string(),
-        name_node_after: "".to_string(),
     }
 }
 
 #[allow(dead_code)]
 pub fn create_node(node_dto: NodeDto) -> ModelProto {
-    let model = get_model();
+    let mut model = get_model();
 
     let attributes_proto = convert_to_attribute_proto(node_dto.attributes.clone());
 
@@ -165,24 +161,10 @@ pub fn create_node(node_dto: NodeDto) -> ModelProto {
         node_dto.domain.clone(),
         attributes_proto.clone(),
         node_dto.doc_string.clone(),
-        model
-            .graph
-            .as_ref()
-            .unwrap()
-            .node
-            .iter()
-            .find(|x| x.name == node_dto.name_node_before.clone())
-            .map(|x| x.clone()),
-        model
-            .graph
-            .as_ref()
-            .unwrap()
-            .node
-            .iter()
-            .find(|x| x.name == node_dto.name_node_after)
-            .map(|x| x.clone()),
-        model,
-    )
+        &mut model,
+    );
+    write_message(&model, STATEFUL_PATHS.model).unwrap();
+    model
 }
 
 #[allow(dead_code)]
@@ -191,7 +173,7 @@ pub fn modify_node(node_dto: NodeDto) -> ModelProto {
 
     let attributes_proto = convert_to_attribute_proto(node_dto.attributes);
 
-    OnnxModelEditor::modify_node(
+    let model = OnnxModelEditor::modify_node(
         node_dto.node_name,
         node_dto.input,
         node_dto.output,
@@ -200,14 +182,18 @@ pub fn modify_node(node_dto: NodeDto) -> ModelProto {
         attributes_proto,
         node_dto.doc_string,
         model,
-    )
+    );
+    write_message(&model, STATEFUL_PATHS.model).unwrap();
+    model
 }
 
 #[allow(dead_code)]
 pub fn remove_node(node_name: String) -> ModelProto {
     let model = get_model();
 
-    OnnxModelEditor::remove_node(node_name, model)
+    let model = OnnxModelEditor::remove_node(node_name, model);
+    write_message(&model, STATEFUL_PATHS.model).unwrap();
+    model
 }
 
 #[derive(Serialize)]
@@ -267,13 +253,22 @@ fn convert_to_attribute_proto(attributes: Vec<(String, i32, String)>) -> Vec<Att
                 attrbute_proto.s = attribute_value.into_bytes()
             }
             x if x == attribute_proto::AttributeType::Floats as i32 => {
-                attrbute_proto.floats = attribute_value.rsplit(";").map(|x| x.parse().unwrap()).collect()
+                attrbute_proto.floats = attribute_value
+                    .rsplit(";")
+                    .map(|x| x.parse().unwrap())
+                    .collect()
             }
             x if x == attribute_proto::AttributeType::Ints as i32 => {
-                attrbute_proto.ints = attribute_value.rsplit(";").map(|x| x.parse().unwrap()).collect()
+                attrbute_proto.ints = attribute_value
+                    .rsplit(";")
+                    .map(|x| x.parse().unwrap())
+                    .collect()
             }
             x if x == attribute_proto::AttributeType::Strings as i32 => {
-                attrbute_proto.strings = attribute_value.rsplit(";").map(|x| x.to_string().into_bytes()).collect()
+                attrbute_proto.strings = attribute_value
+                    .rsplit(";")
+                    .map(|x| x.to_string().into_bytes())
+                    .collect()
             }
             _ => {}
         }
@@ -298,13 +293,28 @@ fn convert_to_vec(attributes_proto: Vec<AttributeProto>) -> Vec<(String, i32, St
                 t.2 = String::from_utf8(attr.s).unwrap();
             }
             x if x == attribute_proto::AttributeType::Floats as i32 => {
-                t.2 = attr.floats.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(";");
+                t.2 = attr
+                    .floats
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join(";");
             }
             x if x == attribute_proto::AttributeType::Ints as i32 => {
-                t.2 = attr.ints.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(";");
+                t.2 = attr
+                    .ints
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join(";");
             }
             x if x == attribute_proto::AttributeType::Strings as i32 => {
-                t.2 = attr.strings.iter().map(|x| String::from_utf8(x.clone()).unwrap()).collect::<Vec<String>>().join(";");
+                t.2 = attr
+                    .strings
+                    .iter()
+                    .map(|x| String::from_utf8(x.clone()).unwrap())
+                    .collect::<Vec<String>>()
+                    .join(";");
             }
             _ => {}
         };
