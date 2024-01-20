@@ -62,7 +62,7 @@ impl OnnxRunningEnvironment {
             optional_receiver = Some(receiver);
             let mut current_node_clone = current_node.clone();
             if current_node.name == "" {
-                current_node_clone.name = "name_node_".to_string()+&index.to_string();
+                current_node_clone.name = "name_node_".to_string()+&current_node.clone().op_type.to_string()+"_"+&index.to_string();
                 index=index+1;
             }
             //per ogni valore NodeProto creo un elemento del vettore node_io_vec
