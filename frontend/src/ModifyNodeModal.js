@@ -185,7 +185,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers, i
                                         <Col>
                                             <Form.Control
                                                 as="select"
-                                                value={attribute[1] + ""}
+                                                value={parseInt(attribute[1])}
                                                 onChange={(e) => handleInputChange(index, 1, e.target.value)}
                                             >
                                                 <option value="">-- Select --</option>
@@ -208,7 +208,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers, i
                                             </Form.Control>
                                         </Col>
                                         <Col>
-                                            {(attribute[1]+"" === "1" || attribute[1]+"" === "2" || attribute[1]+"" === "2" || attribute[1]+"" === "7") ?
+                                            {([1,2,3,6,7,8].includes(attribute[1])) ?
                                                 <Form.Control
                                                     type="text"
                                                     placeholder="Attribute Value"

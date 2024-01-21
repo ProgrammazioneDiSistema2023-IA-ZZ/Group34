@@ -23,3 +23,4 @@ Cargo.lock
 /backend/src/models
 backend/venv/
 frontend/node_modules
+/backend/backend_state
