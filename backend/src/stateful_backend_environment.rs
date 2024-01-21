@@ -2,7 +2,7 @@
 use crate::{
     onnx::{attribute_proto, AttributeProto, ModelProto, TensorProto},
     onnx_running_environment::OnnxModelEditor,
-    utils::{decode_message, get_path_from_ordinal, write_message, OnnxError},
+    utils::{read_tensor, read_model, get_path_from_ordinal, write_message, OnnxError},
 };
 use crate::{
     onnx_running_environment::OnnxRunningEnvironment,
@@ -17,7 +17,7 @@ use std::{
     fs::{self, File, OpenOptions},
     io::{Read, Write},
     path::Path,
-    time::Instant,
+    time::Instant, ptr::null,
 };
 #[allow(unused_imports)]
 use tract_onnx::tract_core::model::Node;
@@ -103,7 +103,7 @@ pub fn select_model(ordinal: usize) -> ModelProto {
     let mut state = ServerState::new();
 
     let path = get_path_from_ordinal(ordinal).unwrap();
-    let model_proto: ModelProto = decode_message(&path.model);
+    let model_proto = read_model(&path.model);
     //salvataggio del modello
     write_message(&model_proto, STATEFUL_PATHS.model).unwrap();
     state.model_name = path.model_name;
@@ -116,7 +116,7 @@ pub fn select_model(ordinal: usize) -> ModelProto {
 
 #[allow(dead_code)]
 pub fn get_model() -> ModelProto {
-    decode_message(STATEFUL_PATHS.model)
+    read_model(STATEFUL_PATHS.model)
 }
 
 #[allow(dead_code)]
@@ -208,12 +208,12 @@ pub fn run(flag: bool, custom: bool, path: String) -> String {
     let mut state = ServerState::new();
 
     let model = get_model();
-    let mut input_tensor: TensorProto = decode_message(&state.default_input_path);
+    let mut input_tensor: TensorProto = read_tensor(&state.default_input_path);
     if custom {
         let arr_d_img = convert_img(path.to_string());
         input_tensor = ndarray_to_tensor_proto::<f32>(arr_d_img, "data").unwrap();
     }
-    let mut output_tensor: TensorProto = decode_message(&state.default_output_pat);
+    let mut output_tensor: TensorProto = read_tensor(&state.default_output_pat);
 
     let start = Instant::now();
     let predicted_output = OnnxRunningEnvironment::new(model, input_tensor).run(flag);
@@ -222,7 +222,7 @@ pub fn run(flag: bool, custom: bool, path: String) -> String {
     // Create a PredictionResult struct
     let result = PredictionResult {
         predicted: results_to_string(predicted_output),
-        expected: results_to_string(output_tensor),
+        expected: if custom {"".to_string()} else {results_to_string(output_tensor)},
         time: duration.as_secs_f64(),
     };
 

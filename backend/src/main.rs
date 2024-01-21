@@ -8,7 +8,8 @@ use crate::onnx_running_environment::OnnxRunningEnvironment;
 use crate::operations::utils::ndarray_to_tensor_proto;
 
 use crate::utils::convert_img;
-use crate::utils::decode_message;
+use crate::utils::read_model;
+use crate::utils::read_tensor;
 #[allow(unused_imports)]
 use crate::utils::CLASSES_NAMES;
 use crate::utils::get_path_from_ordinal;
@@ -116,10 +117,10 @@ pub fn main() {
         }
 
         // uso immagine fornita da utente
-        let model_proto: ModelProto = decode_message(&path.model);
+        let model_proto = read_model(&path.model);
 
         println!("Reading the inputs ...");
-        let mut input_tensor: TensorProto = decode_message(&path.test);
+        let mut input_tensor = read_tensor(&path.test);
         // uso immagine
         if use_custom_img {
             let arr_d_img = convert_img(path_img.to_string());
@@ -140,7 +141,7 @@ pub fn main() {
         }
 
         if !use_custom_img {
-            let output_tensor: TensorProto = decode_message(&path.output);
+            let output_tensor = read_tensor(&path.output);
             println!("\nGround truth classes:");
             println!("{}",results_to_string(output_tensor));
         }

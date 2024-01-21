@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import {Modal, Button, Row} from 'react-bootstrap';
+import { Modal, Button, Row } from 'react-bootstrap';
 
 const RunResultsModal = ({ show, onHide, result }) => {
     return (
@@ -9,29 +9,43 @@ const RunResultsModal = ({ show, onHide, result }) => {
             </Modal.Header>
             <Modal.Body>
                 {result && (!result.error ? <>
-                    <Row>
-                        <h4>Expected:</h4>
-                    </Row>
-                    <Row>
-                        {result.expected.map((ex) => <>
-                            <h6>{ex}</h6>
-                        </>)}
-                    </Row>
+                    {
+                        result.expected?.length > 0 ?
+                            <>
+                                <Row>
+                                    <h4>Expected:</h4>
+                                </Row>
+                                <Row>
+                                    {result.expected.map((ex) => <>
+                                        {
+                                            ex.split(';').map(x => <><h6>{x}</h6> <br /></>)
+                                        }
+                                    </>)}
+                                    <br /><br />
+                                </Row>
+                            </>
+                            :
+                            <></>
+                    }
                     <Row>
                         <h4>Actual:</h4>
                     </Row>
                     <Row>
-                        {result.predicted.map((pr) => <>
-                            <h6>{pr}</h6>
-                        </>)}</Row>
+                        {result.predicted.map((ex) => <>
+                            {
+                                ex.split(';').map(x => <><h6>{x}</h6> <br /></>)
+                            }
+                        </>)}
+                        <br /><br />
+                    </Row>
                     <Row>
                         <h4>Execution time: {parseFloat(result.time).toFixed(3)} seconds</h4>
                     </Row>
-                </>:
-                <>
-                    <h4>Error</h4>
-                    <h6>Error running the network</h6>
-                </>
+                </> :
+                    <>
+                        <h4>Error</h4>
+                        <h6>Error running the network</h6>
+                    </>
                 )}
             </Modal.Body>
             <Modal.Footer>

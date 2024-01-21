@@ -38,7 +38,6 @@ pub struct OnnxRunningEnvironment {
 #[allow(unused)]
 impl OnnxRunningEnvironment {
     pub fn new(model: ModelProto, input_tensor: TensorProto) -> Self {
-        let mut index=0;
         let mut node_io_vec: Vec<NodeIO> = Vec::new();
         let graph = model.clone().graph.unwrap();
         let mut input_tensor_clone = input_tensor.clone();
@@ -61,10 +60,6 @@ impl OnnxRunningEnvironment {
             }
             optional_receiver = Some(receiver);
             let mut current_node_clone = current_node.clone();
-            if current_node.name == "" {
-                current_node_clone.name = "name_node_".to_string()+&current_node.clone().op_type.to_string()+"_"+&index.to_string();
-                index=index+1;
-            }
             //per ogni valore NodeProto creo un elemento del vettore node_io_vec
             let new_node_io = NodeIO {
                 senders, //è il vettore dei sender che verrà generato in seguito dai nodi che hanno come input l'output del nodo in questione
@@ -343,7 +338,7 @@ impl OnnxModelEditor {
 
         //se non ci sono input il nodo viene inserito all'inizio del grafico
         if input.is_empty() {
-            node_to_insert.input.push("data".to_string());
+            node_to_insert.input.push(nodes.get(0).unwrap().input.get(0).unwrap().to_string());
             nodes.insert(0, node_to_insert);
         }else{
             let mut node_to_insert_index = 0;
