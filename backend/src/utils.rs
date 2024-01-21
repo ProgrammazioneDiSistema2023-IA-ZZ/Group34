@@ -1,5 +1,5 @@
 use crate::{onnx::tensor_proto::DataType, operations::utils::tensor_proto_to_ndarray};
-use crate::onnx::TensorProto;
+use crate::onnx::{TensorProto, ModelProto};
 use image::{imageops, GenericImageView};
 use ndarray::{Array, Array2, Array3, Array4, ArrayD, Axis};
 use rand::{thread_rng, Rng};
@@ -39,10 +39,23 @@ pub fn write_message<M: prost::Message>(message: &M, path: &str) -> std::io::Res
     std::fs::write(path, &*buf)?;
     Ok(buf.len())
 }
-
-pub fn decode_message<M: prost::Message + std::default::Default>(path: &str) -> M {
+//resa non pubblica in quanto sono necessarie processazioni dopo la lettura del modello
+fn decode_message<M: prost::Message + std::default::Default>(path: &str) -> M {
     let data = std::fs::read(path).expect("Failed to read ProtoBuf file");
     prost::Message::decode(&data[..]).expect("Failed to decode ProtoBuf data")
+}
+
+pub fn read_model(path: &str) -> ModelProto{
+    let mut model: ModelProto = decode_message(path);
+    //è necessario che tutti i nodi abbiano un nome univoco che è uguale all nome dell'output del nodo
+    for node in &mut model.graph.as_mut().unwrap().node { 
+        node.name = node.output.get(0).unwrap().clone();
+    };
+    model
+}
+
+pub fn read_tensor(path: &str) -> TensorProto{
+    decode_message(path)
 }
 
 #[allow(dead_code)]
@@ -183,8 +196,12 @@ pub fn results_to_string(tensor: TensorProto) -> String {
         .take(3)
     {
         str += &format!(
-            "|Class n:{} Value:{}| ",
-            CLASSES_NAMES[element.0], element.1
+            "|
+                Class n:{};
+                ImageNet name:{};
+                Value:{};
+            | ",
+            element.0, CLASSES_NAMES[element.0], element.1
         );
     }
     str
