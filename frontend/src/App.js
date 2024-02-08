@@ -74,7 +74,7 @@ function App() {
                 </Row>
 
                 <Row className="mb-4">
-                    <Col className="text-center col-lg-9">
+                    <Col className="text-center col-md-9">
                         <Form.Group controlId="selectGraph">
                             <Form.Label>Select Graph:</Form.Label>
                             <Form.Control as="select" onChange={(e) => setSelectedGraph(e.target.value)}
@@ -88,7 +88,7 @@ function App() {
                             </Form.Control>
                         </Form.Group>
                     </Col>
-                    <Col className="text-center col-lg-1">
+                    <Col className="text-center col-md-1">
                         <Button variant="secondary" className="mr-2" onClick={() => setShowGraph((old) => !old)}>
                             {showGraph ?
                                 <><FaEye className="mr-1"/> Hide</>
@@ -97,14 +97,14 @@ function App() {
                             }
                         </Button>
                     </Col>
-                    <Col className="text-center col-lg-1">
+                    <Col className="text-center col-md-1">
                         <Button variant="primary" className="mr-2" onClick={onLoad}>
-                            <FaFileDownload className="mr-1"/> Load
+                            <><FaFileDownload className="mr-1"/> &nbsp;Load&nbsp;</>
                         </Button>
                     </Col>
-                    <Col className="text-center col-lg-1">
+                    <Col className="text-center col-md-1">
                         <Button variant="success" className="mr-2" onClick={() => setShowRunModal(true)}>
-                            <FaPlay className="mr-1"/> Run
+                            <FaPlay className="mr-1"/> &nbsp;&nbsp;Run&nbsp;&nbsp;
                         </Button>
                     </Col>
                 </Row>
