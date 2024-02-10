@@ -89,22 +89,22 @@ function App() {
                         </Form.Group>
                     </Col>
                     <Col className="text-center col-md-1">
-                        <Button variant="secondary" className="mr-2" onClick={() => setShowGraph((old) => !old)}>
+                        <Button variant="secondary" className="mr-2 w-100" onClick={() => setShowGraph((old) => !old)}>
                             {showGraph ?
-                                <><FaEye className="mr-1"/> Hide</>
+                                <><FaEye className="mr-1"/><br/>  Hide </>
                                 :
-                                <><FaEyeSlash className="mr-1"/> Show</>
+                                <><FaEyeSlash className="mr-1"/>  <br/>Show </>
                             }
                         </Button>
                     </Col>
                     <Col className="text-center col-md-1">
-                        <Button variant="primary" className="mr-2" onClick={onLoad}>
-                            <><FaFileDownload className="mr-1"/> &nbsp;Load&nbsp;</>
+                        <Button variant="primary" className="mr-2 w-100" onClick={onLoad}>
+                            <><FaFileDownload className="mr-1"/> <br/>Load</>
                         </Button>
                     </Col>
                     <Col className="text-center col-md-1">
-                        <Button variant="success" className="mr-2" onClick={() => setShowRunModal(true)}>
-                            <FaPlay className="mr-1"/> &nbsp;&nbsp;Run&nbsp;&nbsp;
+                        <Button variant="success" className="mr-2 w-100" onClick={() => setShowRunModal(true)}>
+                            <FaPlay className="mr-1"/> <br/> Run
                         </Button>
                     </Col>
                 </Row>

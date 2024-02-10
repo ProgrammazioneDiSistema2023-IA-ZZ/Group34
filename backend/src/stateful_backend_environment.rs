@@ -254,19 +254,19 @@ fn convert_to_attribute_proto(attributes: Vec<(String, i32, String)>) -> Vec<Att
             }
             x if x == attribute_proto::AttributeType::Floats as i32 => {
                 attrbute_proto.floats = attribute_value
-                    .rsplit(";")
+                    .split(";")
                     .map(|x| x.parse().unwrap())
                     .collect()
             }
             x if x == attribute_proto::AttributeType::Ints as i32 => {
                 attrbute_proto.ints = attribute_value
-                    .rsplit(";")
+                    .split(";")
                     .map(|x| x.parse().unwrap())
                     .collect()
             }
             x if x == attribute_proto::AttributeType::Strings as i32 => {
                 attrbute_proto.strings = attribute_value
-                    .rsplit(";")
+                    .split(";")
                     .map(|x| x.to_string().into_bytes())
                     .collect()
             }
