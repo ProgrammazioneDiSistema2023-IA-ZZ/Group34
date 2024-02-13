@@ -208,7 +208,7 @@ const ModifyNodeModal = ({nodeData, show, onHide, onSave, nodes, initializers, i
                                             </Form.Control>
                                         </Col>
                                         <Col>
-                                            {([1,2,3,6,7,8].includes(attribute[1])) ?
+                                            {(["1","2","3","6","7","8",1,2,3,6,7,8].includes(attribute[1])) ?
                                                 <Form.Control
                                                     type="text"
                                                     placeholder="Attribute Value"
