@@ -29,7 +29,8 @@ mod stateful_backend_environment;
 use crate::utils::OnnxError;
 
 //legge da console un valore di risposa a una s/n function
-fn get_bool_from_console(prompt: &str) -> bool {
+fn 
+get_bool_from_console(prompt: &str) -> bool {
     loop {
         io::stdout().flush().unwrap();
         println!("{prompt}");
